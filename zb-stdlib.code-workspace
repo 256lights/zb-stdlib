@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"extensions": {
+		"recommendations": [
+			"sumneko.lua"
+		]
+	},
+	"settings": {
+		"Lua.runtime.version": "Lua 5.4",
+		"Lua.runtime.builtin": {
+			"coroutine": "disable",
+			"debug": "disable",
+			"io": "disable",
+			"math": "enable",
+			"os": "disable",
+			"package": "disable",
+			"string": "enable",
+			"table": "enable",
+			"utf8": "enable",
+		},
+		"Lua.workspace.ignoreDir": [
+			".vscode",
+		],
+	}
+}

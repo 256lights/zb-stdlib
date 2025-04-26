@@ -1,0 +1,10 @@
+{
+	"Copyright": {
+		"prefix": "copyright",
+		"body": [
+			"$LINE_COMMENT Copyright $CURRENT_YEAR The zb Authors",
+			"$LINE_COMMENT SPDX-License-Identifier: MIT"
+		],
+		"description": "MIT license header"
+	}
+}
