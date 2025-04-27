@@ -22,6 +22,38 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
+local patches <const> = {
+  ["3.82"] = {
+    path "patches/3.82/01-include-limits.diff",
+  };
+}
+
+---@param args {
+---makeDerivation: function,
+---system: string,
+---version: string,
+---}
+---@return derivation
+function module.new(args)
+  local src = module.tarballs[args.version]
+  if not src then
+    error("gnumake.new: unsupported version "..args.version)
+  end
+  local configureFlags
+  if args.version == "4.4.1" then
+    configureFlags = { "--disable-load" }
+  end
+  return args.makeDerivation {
+    pname = "gnumake";
+    version = args.version;
+    system = args.system;
+    src = src;
+    patches = patches[args.version];
+
+    configureFlags = configureFlags;
+  }
+end
+
 ---@param args {
 ---system: string,
 ---sh: string|derivation,
@@ -32,31 +64,6 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 ---}
 ---@return derivation
 function module.makeBootstrap(args)
-  local version <const> = "3.82"
-  return derivation {
-    name = "make-"..version;
-    pname = "make";
-    version = version;
-
-    system = args.system;
-    builder = args.sh.."/bin/sh";
-    args = { path "build.sh" };
-
-    src = module.tarballs[version];
-    patches = {
-      path "patches/3.82/01-include-limits.diff",
-    };
-
-    PATH = strings.makeBinPath {
-      args.gcc,
-      args.sh,
-      args.coreutils,
-      args.gnutar,
-      args.bzip2,
-    };
-    SOURCE_DATE_EPOCH = 0;
-    KBUILD_BUILD_TIMESTAMP = "@0";
-  }
 end
 
 for system, seeds in pairs(bootstrap) do
@@ -64,13 +71,35 @@ for system, seeds in pairs(bootstrap) do
   local seeds <const> = seeds
   module[system] = tables.lazyModule {
     bootstrap = function()
-      return module.makeBootstrap {
+      local version <const> = "3.82"
+      return derivation {
+        name = "gnumake-"..version;
+        pname = "gnumake";
+        version = version;
+
         system = system;
-        sh = seeds.busybox;
-        gcc = gcc[system].bootstrap;
-        coreutils = seeds.busybox;
-        gnutar = seeds.busybox;
-        bzip2 = seeds.busybox;
+        builder = seeds.busybox.."/bin/sh";
+        args = { path "build.sh" };
+
+        src = module.tarballs[version];
+        sourceRoot = "make-"..version;
+        patches = patches[version];
+
+        PATH = strings.makeBinPath {
+          gcc[system].bootstrap,
+          seeds.busybox,
+        };
+        SOURCE_DATE_EPOCH = 0;
+        KBUILD_BUILD_TIMESTAMP = "@0";
+      }
+    end;
+
+    stdenv = function()
+      local stdenv <const> = import "../../stdenv/stdenv.lua"
+      return module.new {
+        makeDerivation = stdenv.makeBootstrapDerivation;
+        system = system;
+        version = "4.4.1";
       }
     end;
   }

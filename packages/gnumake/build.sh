@@ -5,7 +5,7 @@
 set -e
 
 tar -jxf "${src?}"
-cd "${name?}"
+cd "${sourceRoot:-${name?}}"
 for i in ${patches:-}; do
   patch -p1 < "$i"
 done
