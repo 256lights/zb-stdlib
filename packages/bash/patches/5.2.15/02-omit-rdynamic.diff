@@ -1,0 +1,22 @@
+--- bash-5.2.15.orig/configure
++++ bash-5.2.15/configure
+@@ -21722,7 +21722,7 @@ solaris2.9*)	LOCAL_CFLAGS=-DSOLARIS  ;;
+ solaris2.10*)	LOCAL_CFLAGS=-DSOLARIS  ;;
+ solaris2*)	LOCAL_CFLAGS=-DSOLARIS ;;
+ lynxos*)	LOCAL_CFLAGS=-DRECYCLES_PIDS ;;
+-linux*)		LOCAL_LDFLAGS=-rdynamic		 # allow dynamic loading
++linux*)
+ 		case "`uname -r`" in
+ 		1.*|2.[0123]*)	: ;;
+ 		*)	printf "%s\n" "#define PGRP_PIPE 1" >>confdefs.h
+--- bash-5.2.15.orig/configure.ac
++++ bash-5.2.15/configure.ac
+@@ -1170,7 +1170,7 @@ solaris2.9*)	LOCAL_CFLAGS=-DSOLARIS  ;;
+ solaris2.10*)	LOCAL_CFLAGS=-DSOLARIS  ;;
+ solaris2*)	LOCAL_CFLAGS=-DSOLARIS ;;
+ lynxos*)	LOCAL_CFLAGS=-DRECYCLES_PIDS ;;
+-linux*)		LOCAL_LDFLAGS=-rdynamic		 # allow dynamic loading
++linux*)
+ 		case "`uname -r`" in
+ 		1.*|2.[[0123]]*)	: ;;
+ 		*)	AC_DEFINE(PGRP_PIPE) ;;

@@ -19,43 +19,30 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
+local patches <const> = {
+  path "patches/5.2.15/01-strtoimax.diff",
+  path "patches/5.2.15/02-omit-rdynamic.diff",
+}
+
 ---@param args {
+---makeDerivation: function,
 ---system: string,
----sh: string|derivation,
----gcc: string|derivation,
----gnumake: string|derivation,
----coreutils: string|derivation,
----gnutar: string|derivation,
----gzip: string|derivation,
+---version: string,
 ---}
 ---@return derivation
-function module.makeBootstrap(args)
-  local version <const> = "5.2.15"
-  return derivation {
-    name = "bash-"..version;
+function module.new(args)
+  local src = module.tarballs[args.version]
+  if not src then
+    error("bash.new: unsupported version "..args.version)
+  end
+  return args.makeDerivation {
     pname = "bash";
-    version = version;
-
+    version = args.version;
     system = args.system;
-    builder = args.sh.."/bin/sh";
-    args = { path "build.sh" };
+    src = src;
+    patches = patches;
 
-    src = module.tarballs[version];
-    patches = {
-      path "patches/5.2.15/01-strtoimax.diff",
-    };
-
-    PATH = strings.makeBinPath {
-      args.gnumake,
-      args.gcc,
-      args.sh,
-      args.coreutils,
-      args.gnutar,
-      args.gzip,
-    };
-    LDFLAGS = { "-static" };
-    SOURCE_DATE_EPOCH = 0;
-    KBUILD_BUILD_TIMESTAMP = "@0";
+    configureFlags = { "--enable-static-link", "--without-bash-malloc" };
   }
 end
 
@@ -64,14 +51,36 @@ for system, seeds in pairs(bootstrap) do
   local seeds <const> = seeds
   module[system] = tables.lazyModule {
     bootstrap = function()
-      return module.makeBootstrap {
+      local version <const> = "5.2.15"
+      return derivation {
+        name = "bash-"..version;
+        pname = "bash";
+        version = version;
+
         system = system;
-        sh = seeds.busybox;
-        gcc = gcc[system].bootstrap;
-        coreutils = seeds.busybox;
-        gnutar = seeds.busybox;
-        bzip2 = seeds.busybox;
-        gnumake = gnumake[system].bootstrap;
+        builder = seeds.busybox.."/bin/sh";
+        args = { path "build.sh" };
+
+        src = module.tarballs[version];
+        patches = patches;
+
+        PATH = strings.makeBinPath {
+          gnumake[system].bootstrap,
+          seeds.busybox,
+          gcc[system].bootstrap,
+        };
+        LDFLAGS = { "-static" };
+        SOURCE_DATE_EPOCH = 0;
+        KBUILD_BUILD_TIMESTAMP = "@0";
+      }
+    end;
+
+    stdenv = function()
+      local stdenv <const> = import "../../stdenv/stdenv.lua"
+      return module.new {
+        makeDerivation = stdenv.makeBootstrapDerivation;
+        system = system;
+        version = "5.2.15";
       }
     end;
   }
