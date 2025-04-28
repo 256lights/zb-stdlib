@@ -74,19 +74,19 @@ end
 local function baseDeps(system)
   local bash = import("../packages/bash/bash.lua")[system].stdenv
   return bash, {
-    bash,
-    import("../packages/bzip2/bzip2.lua")[system].stdenv,
-    import("../packages/coreutils/coreutils.lua")[system].stdenv,
-    import("../packages/diffutils/diffutils.lua")[system].stdenv,
-    import("../packages/findutils/findutils.lua")[system].stdenv,
-    import("../packages/gawk/gawk.lua")[system].stdenv,
-    import("../packages/gnugrep/gnugrep.lua")[system].stdenv,
-    import("../packages/gnumake/gnumake.lua")[system].stdenv,
-    import("../packages/gnupatch/gnupatch.lua")[system].stdenv,
-    import("../packages/gnused/gnused.lua")[system].stdenv,
-    import("../packages/gnutar/gnutar.lua")[system].stdenv,
-    import("../packages/gzip/gzip.lua")[system].stdenv,
-    import("../packages/xz/xz.lua")[system].stdenv,
+    assert(bash),
+    assert(import("../packages/bzip2/bzip2.lua")[system].stdenv),
+    assert(import("../packages/coreutils/coreutils.lua")[system].stdenv),
+    assert(import("../packages/diffutils/diffutils.lua")[system].stdenv),
+    assert(import("../packages/findutils/findutils.lua")[system].stdenv),
+    assert(import("../packages/gawk/gawk.lua")[system].stdenv),
+    assert(import("../packages/gnugrep/gnugrep.lua")[system].stdenv),
+    assert(import("../packages/gnumake/gnumake.lua")[system].stdenv),
+    assert(import("../packages/gnupatch/gnupatch.lua")[system].stdenv),
+    assert(import("../packages/gnused/gnused.lua")[system].stdenv),
+    assert(import("../packages/gnutar/gnutar.lua")[system].stdenv),
+    assert(import("../packages/gzip/gzip.lua")[system].stdenv),
+    assert(import("../packages/xz/xz.lua")[system].stdenv),
   }
 end
 
