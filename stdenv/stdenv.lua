@@ -14,7 +14,10 @@ module.builderScript = path "builder.sh"
 ---pname: string?,
 ---version: string?,
 ---system: string,
----[string]: string|number|boolean|(string|number|boolean)[],
+---builder: string|derivation?,
+---realBuilder: string|derivation?,
+---args: (string|derivation|number|boolean)[]?,
+---[string]: string|derivation|number|boolean|(string|derivation|number|boolean)[],
 ---}
 ---@return derivation
 local function makeDerivation(bash, deps, args)
@@ -40,12 +43,8 @@ local function makeDerivation(bash, deps, args)
     end
     args.name = name
   end
-  if not args.builder then
-    args.builder = bash.."/bin/bash"
-  end
-  if not args.args then
-    args.args = { module.builderScript }
-  end
+  args.args = args.args or { args.builder or module.builderScript }
+  args.builder = args.realBuilder or bash.."/bin/bash"
   if not args.SOURCE_DATE_EPOCH then
     args.SOURCE_DATE_EPOCH = 0
   end
@@ -60,7 +59,10 @@ end
 ---pname: string?,
 ---version: string?,
 ---system: string,
----[string]: string|number|boolean|(string|number|boolean)[],
+---builder: string|derivation?,
+---realBuilder: string|derivation?,
+---args: (string|derivation|number|boolean)[]?,
+---[string]: string|derivation|number|boolean|(string|derivation|number|boolean)[],
 ---}
 ---@return derivation
 function module.makeBootstrapDerivation(args)
@@ -95,7 +97,10 @@ end
 ---pname: string?,
 ---version: string?,
 ---system: string,
----[string]: string|number|boolean|(string|number|boolean)[],
+---builder: string|derivation?,
+---realBuilder: string|derivation?,
+---args: (string|derivation|number|boolean)[]?,
+---[string]: string|derivation|number|boolean|(string|derivation|number|boolean)[],
 ---}
 ---@return derivation
 function module.makeDerivationNoCC(args)
@@ -108,7 +113,10 @@ end
 ---pname: string?,
 ---version: string?,
 ---system: string,
----[string]: string|number|boolean|(string|number|boolean)[],
+---builder: string|derivation?,
+---realBuilder: string|derivation?,
+---args: (string|derivation|number|boolean)[]?,
+---[string]: string|derivation|number|boolean|(string|derivation|number|boolean)[],
 ---}
 ---@return derivation
 function module.makeDerivation(args)

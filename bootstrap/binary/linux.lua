@@ -1,11 +1,13 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local binutils <const> = import "../binutils.lua"
-local busybox <const> = import "../busybox.lua"
+local tables <const> = import "../../tables.lua"
+
+local binutils <const> = import "../../packages/binutils/binutils.lua"
+local busybox <const> = import "../../packages/busybox/busybox.lua"
 local gcc <const> = import "../../packages/gcc/gcc.lua"
 local gmp <const> = import "../../packages/gmp/gmp.lua"
-local linux_headers <const> = import "../linux_headers.lua"
+local linuxHeaders <const> = import "../../packages/linux-headers/linux-headers.lua"
 local mpc <const> = import "../../packages/libmpc/libmpc.lua"
 local mpfr <const> = import "../../packages/mpfr/mpfr.lua"
 local musl <const> = import "../../packages/musl/musl.lua"
@@ -26,6 +28,18 @@ local function addDefault(t, k, v)
   elseif x == false then
     t[k] = nil
   end
+end
+
+---@param sep string
+---@param ... string
+---@return string
+local function concat(sep, ...)
+  local list = {}
+  for i = 1, select("#", ...) do
+    local p = select(i, ...)
+    if p then list[#list + 1] = p end
+  end
+  return table.concat(list, sep)
 end
 
 local muslCrossMakeCommit <const> = "6f3701d08137496d5aac479e3a3977b5ae993c1f"
@@ -54,14 +68,18 @@ local function forArchitecture(arch)
     hash = "sha256:75d5d255a2a273b6e651f82eecfabf6cbcd8eaeae70e86b417384c8f4a58d8d3";
   }
 
+  ---Miniature copy of stdenv.makeDerivation that uses /usr/bin/bash.
+  ---@param args table<string, any>
+  ---@return derivation
   local function makeDerivation(args)
     addDefault(args, "name", function() return args.pname.."-"..args.version end)
     addDefault(args, "system", system)
+    args.args = args.args or { args.builder or builderScript }
+    args.builder = args.realBuilder or "/usr/bin/bash"
     addDefault(args, "builder", "/usr/bin/bash")
     addDefault(args, "PATH", userPath)
     addDefault(args, "SOURCE_DATE_EPOCH", 0)
     addDefault(args, "KBUILD_BUILD_TIMESTAMP", "@0")
-    args.args = { builderScript }
     return derivation(args)
   end
 
@@ -215,58 +233,41 @@ find \
 ]];
   }
 
-  local linux_headers <const> = linux_headers {
-    system = system;
-
-    PATH = table.concat({
-      gcc2.."/bin",
-      userPath,
-    }, ":");
-
-    LDFLAGS = "-static";
-
-    C_INCLUDE_PATH = gcc2.."/include";
-    LIBRARY_PATH = table.concat({
+  ---@param args table<string, any>
+  ---@return derivation
+  local function makeDerivationWithGCC2(args)
+    args = tables.clone(args)
+    args.PATH = concat(":", args.PATH, gcc2.."/bin", userPath)
+    args.C_INCLUDE_PATH = concat(":",
+      args.C_INCLUDE_PATH,
+      gcc2.."/include"
+    )
+    args.LIBRARY_PATH = concat(":",
+      args.LIBRARY_PATH,
       gcc2.."/lib/gcc/"..target.."/"..gccVersion,
-      gcc2.."/"..target.."/lib",
-    }, ":");
+      gcc2.."/"..target.."/lib"
+    )
+    return makeDerivation(args)
+  end
+
+  local linuxHeaders <const> = linuxHeaders.new {
+    makeDerivation = makeDerivationWithGCC2;
+    system = system;
+    version = "4.14.336";
   }
 
-  local busybox = makeDerivation {
-    pname = "busybox";
-    version = busybox.version;
-
-    src = busybox.tarball;
-    patches = {
-      path "patches/busybox-1.36.1/01-ldflags.diff",
-    };
-
-    PATH = table.concat({
-      gcc2.."/bin",
-      userPath,
-    }, ":");
-
-    C_INCLUDE_PATH = table.concat({
-      linux_headers.."/include",
-      gcc2.."/include",
-    }, ":");
-    LIBRARY_PATH = table.concat({
-      gcc2.."/lib/gcc/"..target.."/"..gccVersion,
-      gcc2.."/"..target.."/lib",
-    }, ":");
-
-    CONFIG_INSTALL_NO_USR = "y";
-
+  local busybox = busybox.new {
+    makeDerivation = makeDerivationWithGCC2;
+    system = system;
+    version = "1.36.1";
     configFile = path "busybox-config";
-
-    makeFlags = "LDFLAGS=-static HOSTLDFLAGS=-static";
-    configurePhase = "cp $configFile .config\n";
-    installPhase = "make CONFIG_PREFIX=\"$out\" ${makeFlags:-} ${installFlags:-} install";
+    linuxHeaders = linuxHeaders;
   }
 
   return {
     gcc = gcc2;
     busybox = busybox;
+    linuxHeaders = linuxHeaders;
   }
 end
 

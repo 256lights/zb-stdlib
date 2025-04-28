@@ -1,6 +1,8 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
+local tables <const> = import "../../tables.lua"
+
 local module <const> = {}
 
 local tarballArgs <const> = {
@@ -18,11 +20,6 @@ local tarballArgs <const> = {
   };
 }
 
-module.tarballs = setmetatable({}, {
-  __index = function(_, k)
-    local args = tarballArgs[k]
-    if args then return fetchurl(args) end
-  end;
-})
+module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 return module
