@@ -18,7 +18,7 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---gmp: derivation|string,
 ---mpfr: derivation|string,
@@ -40,7 +40,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "libmpc";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     configureFlags = configureFlags;
   }
@@ -55,7 +55,7 @@ for system in pairs(bootstrap) do
       local mpfr <const> = import("../mpfr/mpfr.lua")[system].stdenv
       return module.new {
         makeDerivation = stdenv.makeBootstrapDerivation;
-        system = system;
+        buildSystem = system;
         version = "1.2.1";
         gmp = gmp;
         mpfr = mpfr;

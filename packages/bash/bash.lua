@@ -26,7 +26,7 @@ local patches <const> = {
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---}
 ---@return derivation
@@ -38,7 +38,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "bash";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     patches = patches;
 
@@ -79,7 +79,7 @@ for system, seeds in pairs(bootstrap) do
       local stdenv <const> = import "../../stdenv/stdenv.lua"
       return module.new {
         makeDerivation = stdenv.makeBootstrapDerivation;
-        system = system;
+        buildSystem = system;
         version = "5.2.15";
       }
     end;

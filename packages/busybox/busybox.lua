@@ -23,7 +23,7 @@ local patches <const> = {
 
 ---@param args {
 ---makeDerivation: (fun(args: table<string, any>): derivation),
----system: string,
+---buildSystem: string,
 ---version: string,
 ---configFile: derivation|string,
 ---linuxHeaders: derivation|string,
@@ -37,7 +37,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "busybox";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     patches = patches[args.version];
 

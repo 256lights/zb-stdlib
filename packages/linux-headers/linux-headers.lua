@@ -1,6 +1,7 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -16,10 +17,9 @@ module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 local builderScript <const> = path "build.sh"
 
----comment
 ---@param args {
 ---makeDerivation: (fun(args: table<string, any>): derivation),
----system: string,
+---buildSystem: string,
 ---version: string,
 ---}
 ---@return derivation
@@ -28,12 +28,17 @@ function module.new(args)
   if not src then
     error("linux-headers.new: unsupported version "..args.version)
   end
+  local sys = assert(systems.parse(args.buildSystem), "invalid buildSystem "..args.buildSystem)
+  assert(sys.isX86 or sys.isARM, "unsupported system "..args.buildSystem)
   return args.makeDerivation {
     pname = "linux-headers";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     builder = builderScript;
+
+    isX86 = sys.isX86;
+    isARM = sys.isARM;
   }
 end
 

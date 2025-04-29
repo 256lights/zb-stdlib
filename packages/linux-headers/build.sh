@@ -24,21 +24,18 @@ rm include/uapi/linux/pktcdvd.h \
 # shellcheck disable=SC2086
 "${CC:-gcc}" ${CFLAGS:-} ${LDFLAGS:-} -o scripts/unifdef scripts/unifdef.c
 
-case "${system?}" in
-  i686-linux|x86_64-linux)
-    arch_dir=x86
-    ;;
-  aarch64-linux)
-    arch_dir=arm
-    ;;
-esac
+if [[ "${isX86:-}" = 1 ]]; then
+  arch_dir=x86
+elif [[ "${isARM:-}" = 1 ]]; then
+  arch_dir=arm
+else
+  echo "unknown arch" >&2
+  exit 1
+fi
 
-base_dir="${PWD}"
 for d in include/uapi arch/${arch_dir?}/include/uapi; do
-  cd "${d}"
-  find . -type d -exec mkdir "${out?}/include/{}" -p \;
-  headers="$(find . -type f -name "*.h")"
-  cd "${base_dir}"
+  ( cd "$d" && find . -type d -exec mkdir -p "${out?}/include/{}" \; )
+  headers="$(cd "$d" && find . -type f -name "*.h")"
   for h in ${headers}; do
     path="$(dirname "${h}")"
     scripts/headers_install.sh "$out/include/${path}" "${d}/${path}" "$(basename "${h}")"
@@ -49,18 +46,16 @@ for i in types ioctl termios termbits ioctls sockios socket param; do
   cp "$out/include/asm-generic/${i}.h" "$out/include/asm/${i}.h"
 done
 
-case "$system" in
-  i686-linux|x86_64-linux)
-    bash arch/x86/entry/syscalls/syscallhdr.sh \
-      arch/x86/entry/syscalls/syscall_32.tbl \
-      "$out/include/asm/unistd_32.h" \
-      i386
-    bash arch/x86/entry/syscalls/syscallhdr.sh \
-      arch/x86/entry/syscalls/syscall_64.tbl \
-      "$out/include/asm/unistd_64.h" \
-      common,64
-    ;;
-esac
+if [[ "${isX86:-}" = 1 ]]; then
+  bash arch/x86/entry/syscalls/syscallhdr.sh \
+    arch/x86/entry/syscalls/syscall_32.tbl \
+    "$out/include/asm/unistd_32.h" \
+    i386
+  bash arch/x86/entry/syscalls/syscallhdr.sh \
+    arch/x86/entry/syscalls/syscall_64.tbl \
+    "$out/include/asm/unistd_64.h" \
+    common,64
+fi
 
 # Generate linux/version.h
 # Rules are from makefile

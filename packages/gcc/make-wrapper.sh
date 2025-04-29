@@ -12,7 +12,7 @@ makeWrapper() {
   sed \
     -e "s @tool@ $tool g" \
     -e "s @gcc@ ${gcc?} g" \
-    -e "s @target@ ${target?} g" \
+    -e "s @targetSystem@ ${targetSystem?} g" \
     -e "s @version@ ${version?} g" \
     -e "s @runtimeShell@ ${runtimeShell:-/bin/sh} g" \
     "${template?}" > "$tool"
@@ -20,11 +20,11 @@ makeWrapper() {
 makeWrapper gcc
 makeWrapper g++
 makeWrapper c++
-makeWrapper "${target?}-gcc"
-makeWrapper "${target?}-g++"
-makeWrapper "${target?}-cc"
-makeWrapper "${target?}-c++"
-makeWrapper "${target?}-gcc-${version?}"
+makeWrapper "${targetSystem?}-gcc"
+makeWrapper "${targetSystem?}-g++"
+makeWrapper "${targetSystem?}-cc"
+makeWrapper "${targetSystem?}-c++"
+makeWrapper "${targetSystem?}-gcc-${version?}"
 
 mkdir "${out?}"
 for i in * ; do

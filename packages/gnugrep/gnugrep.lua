@@ -16,19 +16,21 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
----@param makeDerivation function
----@param system string
----@param version string
+---@param args {
+---makeDerivation: (fun(args: table<string, any>): derivation),
+---buildSystem: string,
+---version: string,
+---}
 ---@return derivation
-function module.new(makeDerivation, system, version)
-  local src = module.tarballs[version]
+function module.new(args)
+  local src = module.tarballs[args.version]
   if not src then
-    error("gnugrep.new: unsupported version "..version)
+    error("gnugrep.new: unsupported version "..args.version)
   end
-  return makeDerivation {
+  return args.makeDerivation {
     pname = "gnugrep";
-    version = version;
-    system = system;
+    version = args.version;
+    buildSystem = args.buildSystem;
     src = src;
   }
 end
@@ -38,7 +40,11 @@ for system in pairs(bootstrap) do
   module[system] = tables.lazyModule {
     stdenv = function()
       local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new(stdenv.makeBootstrapDerivation, system, "3.12")
+      return module.new {
+        makeDerivation = stdenv.makeBootstrapDerivation;
+        buildSystem = system;
+        version = "3.12";
+      }
     end;
   }
 end

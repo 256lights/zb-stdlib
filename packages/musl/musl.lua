@@ -20,7 +20,7 @@ module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---shared: boolean?,
 ---}
@@ -37,7 +37,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "musl";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     configureFlags = configureFlags;
   }

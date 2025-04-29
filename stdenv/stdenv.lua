@@ -13,7 +13,7 @@ module.builderScript = path "builder.sh"
 ---@param args {
 ---pname: string?,
 ---version: string?,
----system: string,
+---buildSystem: string,
 ---builder: string|derivation?,
 ---realBuilder: string|derivation?,
 ---args: (string|derivation|number|boolean)[]?,
@@ -31,6 +31,7 @@ local function makeDerivation(bash, deps, args)
   end
 
   args = tables.clone(args)
+  args.system = args.buildSystem
   args.PATH = binPath
   if not args.name then
     local name = args.pname
@@ -58,7 +59,7 @@ end
 ---@param args {
 ---pname: string?,
 ---version: string?,
----system: string,
+---buildSystem: string,
 ---builder: string|derivation?,
 ---realBuilder: string|derivation?,
 ---args: (string|derivation|number|boolean)[]?,
@@ -66,29 +67,29 @@ end
 ---}
 ---@return derivation
 function module.makeBootstrapDerivation(args)
-  local gcc = import("../packages/gcc/gcc.lua")[args.system].bootstrap
-  local gnumake = import("../packages/gnumake/gnumake.lua")[args.system].bootstrap
-  local busybox = import("../bootstrap/seeds.lua")[args.system].busybox
-  local bash = import("../packages/bash/bash.lua")[args.system].bootstrap
+  local gcc = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
+  local gnumake = import("../packages/gnumake/gnumake.lua")[args.buildSystem].bootstrap
+  local busybox = import("../bootstrap/seeds.lua")[args.buildSystem].busybox
+  local bash = import("../packages/bash/bash.lua")[args.buildSystem].bootstrap
   return makeDerivation(bash, { gcc, gnumake, bash, busybox }, args)
 end
 
-local function baseDeps(system)
-  local bash = import("../packages/bash/bash.lua")[system].stdenv
+local function baseDeps(buildSystem)
+  local bash = import("../packages/bash/bash.lua")[buildSystem].stdenv
   return bash, {
     assert(bash),
-    assert(import("../packages/bzip2/bzip2.lua")[system].stdenv),
-    assert(import("../packages/coreutils/coreutils.lua")[system].stdenv),
-    assert(import("../packages/diffutils/diffutils.lua")[system].stdenv),
-    assert(import("../packages/findutils/findutils.lua")[system].stdenv),
-    assert(import("../packages/gawk/gawk.lua")[system].stdenv),
-    assert(import("../packages/gnugrep/gnugrep.lua")[system].stdenv),
-    assert(import("../packages/gnumake/gnumake.lua")[system].stdenv),
-    assert(import("../packages/gnupatch/gnupatch.lua")[system].stdenv),
-    assert(import("../packages/gnused/gnused.lua")[system].stdenv),
-    assert(import("../packages/gnutar/gnutar.lua")[system].stdenv),
-    assert(import("../packages/gzip/gzip.lua")[system].stdenv),
-    assert(import("../packages/xz/xz.lua")[system].stdenv),
+    assert(import("../packages/bzip2/bzip2.lua")[buildSystem].stdenv),
+    assert(import("../packages/coreutils/coreutils.lua")[buildSystem].stdenv),
+    assert(import("../packages/diffutils/diffutils.lua")[buildSystem].stdenv),
+    assert(import("../packages/findutils/findutils.lua")[buildSystem].stdenv),
+    assert(import("../packages/gawk/gawk.lua")[buildSystem].stdenv),
+    assert(import("../packages/gnugrep/gnugrep.lua")[buildSystem].stdenv),
+    assert(import("../packages/gnumake/gnumake.lua")[buildSystem].stdenv),
+    assert(import("../packages/gnupatch/gnupatch.lua")[buildSystem].stdenv),
+    assert(import("../packages/gnused/gnused.lua")[buildSystem].stdenv),
+    assert(import("../packages/gnutar/gnutar.lua")[buildSystem].stdenv),
+    assert(import("../packages/gzip/gzip.lua")[buildSystem].stdenv),
+    assert(import("../packages/xz/xz.lua")[buildSystem].stdenv),
   }
 end
 
@@ -96,7 +97,7 @@ end
 ---@param args {
 ---pname: string?,
 ---version: string?,
----system: string,
+---buildSystem: string,
 ---builder: string|derivation?,
 ---realBuilder: string|derivation?,
 ---args: (string|derivation|number|boolean)[]?,
@@ -104,7 +105,7 @@ end
 ---}
 ---@return derivation
 function module.makeDerivationNoCC(args)
-  local bash, deps = baseDeps(args.system)
+  local bash, deps = baseDeps(args.buildSystem)
   return makeDerivation(bash, deps, args)
 end
 
@@ -112,7 +113,7 @@ end
 ---@param args {
 ---pname: string?,
 ---version: string?,
----system: string,
+---buildSystem: string,
 ---builder: string|derivation?,
 ---realBuilder: string|derivation?,
 ---args: (string|derivation|number|boolean)[]?,
@@ -120,8 +121,8 @@ end
 ---}
 ---@return derivation
 function module.makeDerivation(args)
-  local bash, deps = baseDeps(args.system)
-  deps[#deps+1] = import("../packages/gcc/gcc.lua")[args.system].bootstrap
+  local bash, deps = baseDeps(args.buildSystem)
+  deps[#deps+1] = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
   return makeDerivation(bash, deps, args)
 end
 

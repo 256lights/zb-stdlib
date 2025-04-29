@@ -63,7 +63,7 @@ module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---go: derivation|string?,
 ---}
@@ -83,7 +83,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "go";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
 
     -- TODO(#14): CGO_ENABLED=0 because cgo requires gcc 4.6 or newer.
@@ -120,7 +120,7 @@ for system in pairs(bootstrap) do
     end
     return module.new {
       makeDerivation = stdenv.makeDerivation;
-      system = system;
+      buildSystem = system;
       version = version;
       go = go;
     }

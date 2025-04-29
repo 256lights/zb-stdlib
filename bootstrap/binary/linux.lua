@@ -1,6 +1,7 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local binutils <const> = import "../../packages/binutils/binutils.lua"
@@ -13,22 +14,6 @@ local mpfr <const> = import "../../packages/mpfr/mpfr.lua"
 local musl <const> = import "../../packages/musl/musl.lua"
 
 local builderScript <const> = path "builder.sh"
-
----@param t table
----@param k any
----@param v any
-local function addDefault(t, k, v)
-  local x = t[k]
-  if x == nil then
-    if type(v) == "function" then
-      t[k] = v()
-    else
-      t[k] = v
-    end
-  elseif x == false then
-    t[k] = nil
-  end
-end
 
 ---@param sep string
 ---@param ... string
@@ -49,12 +34,17 @@ local muslCrossMakeTarball <const> = fetchurl {
   hash = "sha256:b6ad075187d8ac737e38f5f97545bebab6272aac07ffed321d0d90f71ef4c468";
 }
 
-local function forArchitecture(arch)
+local function forSystem(system)
   local userPath <const> = os.getenv("PATH") or "/usr/local/bin:/usr/bin:/bin"
   local userCIncludePath <const> = os.getenv("C_INCLUDE_PATH")
   local userLibraryPath <const> = os.getenv("LIBRARY_PATH")
-  local system <const> = arch.."-linux"
-  local target <const> = arch.."-unknown-linux-musl"
+  local sys <const> = systems.parse(system)
+  local target <const> = systems.tostring {
+    arch = sys.arch;
+    vendor = sys.vendor;
+    os = sys.os;
+    env = "musl";
+  }
 
   local gnuConfigCommit <const> = "3d5db9ebe8607382d17d60faf8853c944fc5f353"
   local configGuess <const> = fetchurl {
@@ -72,14 +62,13 @@ local function forArchitecture(arch)
   ---@param args table<string, any>
   ---@return derivation
   local function makeDerivation(args)
-    addDefault(args, "name", function() return args.pname.."-"..args.version end)
-    addDefault(args, "system", system)
+    args.name = args.name or assert(args.pname, "missing pname").."-"..assert(args.version, "missing version")
+    args.system = args.buildSystem
     args.args = args.args or { args.builder or builderScript }
     args.builder = args.realBuilder or "/usr/bin/bash"
-    addDefault(args, "builder", "/usr/bin/bash")
-    addDefault(args, "PATH", userPath)
-    addDefault(args, "SOURCE_DATE_EPOCH", 0)
-    addDefault(args, "KBUILD_BUILD_TIMESTAMP", "@0")
+    args.PATH = args.PATH or userPath
+    args.SOURCE_DATE_EPOCH = args.SOURCE_DATE_EPOCH or 0
+    args.KBUILD_BUILD_TIMESTAMP = args.KBUILD_BUILD_TIMESTAMP or "@0"
     return derivation(args)
   end
 
@@ -104,6 +93,7 @@ local function forArchitecture(arch)
     local drvArgs = {
       pname = "gcc";
       version = gccVersion;
+      buildSystem = system;
 
       TARGET = target;
       PATH = args.PATH;
@@ -252,13 +242,13 @@ find \
 
   local linuxHeaders <const> = linuxHeaders.new {
     makeDerivation = makeDerivationWithGCC2;
-    system = system;
+    buildSystem = system;
     version = "4.14.336";
   }
 
   local busybox = busybox.new {
     makeDerivation = makeDerivationWithGCC2;
-    system = system;
+    buildSystem = system;
     version = "1.36.1";
     configFile = path "busybox-config";
     linuxHeaders = linuxHeaders;
@@ -273,8 +263,8 @@ end
 
 return setmetatable({}, {
   __index = function(_, k)
-    if k == "x86_64" or k == "aarch64" then
-      return forArchitecture(k)
+    if k == "x86_64-unknown-linux" or k == "aarch64-unknown-linux" then
+      return forSystem(k)
     end
     return nil
   end;

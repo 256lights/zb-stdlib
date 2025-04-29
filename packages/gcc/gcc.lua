@@ -4,6 +4,7 @@
 local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
 local strings <const> = import "../../strings.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -27,11 +28,11 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 --- Creates a wrapper script that always includes GCC's includes and libraries.
 ---@param args {
----system: string,
+---buildSystem: string,
+---targetSystem: string,
 ---gcc: derivation|string,
 ---coreutils: derivation|string,
 ---version: string|nil,
----target: string,
 ---sh: derivation|string,
 ---}
 ---@return derivation
@@ -64,7 +65,7 @@ function module.makeWrapper(args)
     pname = "gcc";
     version = version;
 
-    system = args.system;
+    system = args.buildSystem;
     builder = sh;
     args = { path "make-wrapper.sh" };
 
@@ -75,7 +76,7 @@ function module.makeWrapper(args)
       args.coreutils,
     };
     gcc = args.gcc;
-    target = args.target;
+    targetSystem = args.targetSystem;
     runtimeShell = sh;
   }
 end
@@ -85,12 +86,14 @@ for system, seeds in pairs(bootstrap) do
   local seeds <const> = seeds
   module[system] = tables.lazyModule {
     bootstrap = function()
+      local targetSystem = systems.parse(system)
+      targetSystem.env = "musl"
       return module.makeWrapper {
-        system = system;
+        buildSystem = system;
+        targetSystem = tostring(targetSystem);
         gcc = seeds.gcc;
         coreutils = seeds.busybox;
         sh = seeds.busybox;
-        target = seeds.target;
       }
     end;
   }

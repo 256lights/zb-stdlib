@@ -30,7 +30,7 @@ local patches <const> = {
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---}
 ---@return derivation
@@ -46,24 +46,12 @@ function module.new(args)
   return args.makeDerivation {
     pname = "gnumake";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     patches = patches[args.version];
 
     configureFlags = configureFlags;
   }
-end
-
----@param args {
----system: string,
----sh: string|derivation,
----gcc: string|derivation,
----coreutils: string|derivation,
----gnutar: string|derivation,
----bzip2: string|derivation,
----}
----@return derivation
-function module.makeBootstrap(args)
 end
 
 for system, seeds in pairs(bootstrap) do
@@ -98,7 +86,7 @@ for system, seeds in pairs(bootstrap) do
       local stdenv <const> = import "../../stdenv/stdenv.lua"
       return module.new {
         makeDerivation = stdenv.makeBootstrapDerivation;
-        system = system;
+        buildSystem = system;
         version = "4.4.1";
       }
     end;

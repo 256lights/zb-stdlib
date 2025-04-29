@@ -19,7 +19,7 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 ---@param args {
 ---makeDerivation: function,
----system: string,
+---buildSystem: string,
 ---version: string,
 ---gnum4: derivation|string,
 ---}
@@ -32,7 +32,7 @@ function module.new(args)
   return args.makeDerivation {
     pname = "gmp";
     version = args.version;
-    system = args.system;
+    buildSystem = args.buildSystem;
     src = src;
     configureFlags = { "--disable-shared" };
     PATH = strings.makeBinPath {
@@ -49,7 +49,7 @@ for system in pairs(bootstrap) do
       local gnum4 <const> = import("../gnum4/gnum4.lua")[system].stdenv
       return module.new {
         makeDerivation = stdenv.makeBootstrapDerivation;
-        system = system;
+        buildSystem = system;
         version = "6.2.1";
         gnum4 = gnum4;
       }

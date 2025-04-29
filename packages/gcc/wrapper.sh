@@ -11,5 +11,5 @@ export LIBRARY_PATH="${LIBRARY_PATH:-}"
 if [ -n "$LIBRARY_PATH" ]; then
   LIBRARY_PATH="${LIBRARY_PATH}:"
 fi
-LIBRARY_PATH="${LIBRARY_PATH}@gcc@/lib/gcc/@target@/@version@:@gcc@/@target@/lib"
+LIBRARY_PATH="${LIBRARY_PATH}@gcc@/lib/gcc/@targetSystem@/@version@:@gcc@/@targetSystem@/lib"
 exec @gcc@/bin/@tool@ "$@"
