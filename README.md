@@ -22,7 +22,7 @@ and `aarch64-unknown-linux`.
 
 Predominantly [MIT](LICENSE),
 although individual files may be under different licenses to comply with upstream licensing.
-For example, patches for a package covered under the GNU General Public License package
+For example, patches for a package covered under the GNU General Public License
 are themselves licensed under the same license.
 Files in this repository carry a [SPDX license identifier][] where possible.
 
