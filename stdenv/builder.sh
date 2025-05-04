@@ -107,9 +107,11 @@ if [[ "${dontConfigure:-}" -ne 1 ]]; then
   runHook preConfigure
   if [[ -n "${configurePhase:-}" ]]; then
     eval "$configurePhase"
-  else
+  elif [[ -x ./configure ]]; then
     # shellcheck disable=SC2086
     ./configure --prefix="${out?}" ${configureFlags:-}
+  else
+    echo "no configure script, doing nothing"
   fi
   runHook postConfigure
 fi
@@ -118,6 +120,8 @@ if [[ "${dontBuild:-}" -ne 1 ]]; then
   runHook preBuild
   if [[ -n "${buildPhase:-}" ]]; then
     eval "$buildPhase"
+  elif [[ -z "${makeFlags:-}" && ! ( -e Makefile || -e makefile || -e GNUmakefile ) ]]; then
+    echo "no Makefile or custom buildPhase, doing nothing"
   else
     # shellcheck disable=SC2086
     make "-j${ZB_BUILD_CORES:-1}" ${makeFlags:-} ${buildFlags:-}
@@ -129,6 +133,8 @@ if [[ "${dontInstall:-}" -ne 1 ]]; then
   runHook preInstall
   if [[ -n "${installPhase:-}" ]]; then
     eval "$installPhase"
+  elif [[ -z "${makeFlags:-}" && ! ( -e Makefile || -e makefile || -e GNUmakefile ) ]]; then
+    echo "no Makefile or custom installPhase, doing nothing"
   else
     make install ${makeFlags:-} ${installFlags:-}
   fi
