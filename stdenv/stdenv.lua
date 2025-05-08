@@ -7,6 +7,7 @@ local tables <const> = import "../tables.lua"
 local module <const> = {}
 
 module.builderScript = path "builder.sh"
+module.helpersNix = path "helpers-nix.sh"
 
 ---@param bash string|derivation
 ---@param deps string|derivation[]
@@ -44,6 +45,7 @@ local function makeDerivation(bash, deps, args)
     end
     args.name = name
   end
+  args.helpersNix = args.helpersNix or module.helpersNix
   args.args = args.args or { args.builder or module.builderScript }
   args.builder = args.realBuilder or bash.."/bin/bash"
   if not args.SOURCE_DATE_EPOCH then

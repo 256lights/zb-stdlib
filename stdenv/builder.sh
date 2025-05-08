@@ -4,6 +4,11 @@
 
 set -euo pipefail
 
+if [[ -n "${helpersNix:-}" ]]; then
+  #shellcheck source=helpers-nix.sh
+  . "$helpersNix"
+fi
+
 runHook() {
   local hookName="$1"
   shift
@@ -31,19 +36,6 @@ unpackFile() {
         ;;
     esac
   fi
-}
-stripHash() {
-  local strippedName casematchOpt=0
-  # On separate line for `set -e`
-  strippedName="$(basename -- "$1")"
-  shopt -q nocasematch && casematchOpt=1
-  shopt -u nocasematch
-  if [[ "$strippedName" =~ ^[a-z0-9]{32}- ]]; then
-      echo "${strippedName:33}"
-  else
-      echo "$strippedName"
-  fi
-  if (( casematchOpt )); then shopt -s nocasematch; fi
 }
 
 if [[ "${dontUnpack:-}" -ne 1 ]]; then
@@ -108,6 +100,7 @@ if [[ "${dontConfigure:-}" -ne 1 ]]; then
   if [[ -n "${configurePhase:-}" ]]; then
     eval "$configurePhase"
   elif [[ -x ./configure ]]; then
+    patchShebangs ./configure
     # shellcheck disable=SC2086
     ./configure --prefix="${out?}" ${configureFlags:-}
   else

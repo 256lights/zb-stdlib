@@ -86,6 +86,10 @@ function module.new(args)
     buildSystem = args.buildSystem;
     src = src;
 
+    postPatch = [[
+patchShebangs src/make.bash
+]];
+
     -- TODO(#14): CGO_ENABLED=0 because cgo requires gcc 4.6 or newer.
     -- https://go.dev/wiki/MinimumRequirements
     configurePhase = [[
