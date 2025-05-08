@@ -5,8 +5,8 @@ local tables <const> = import "../tables.lua"
 
 local seeds <const> = {
   ["x86_64-unknown-linux"] = {
-    gcc = "/zb/store/9n2ccy3mcsb04q47npp28jwkd9py3wdj-gcc-4.2.1";
-    busybox = "/zb/store/z5yrbqk8sjlzyvw8wpicsn2ybk0sc470-busybox-1.36.1";
+    gcc = "/opt/zb/store/6ssl5z26zmr9dn2iz4xi17a13ia7qz8y-gcc-4.2.1";
+    busybox = "/opt/zb/store/hpsxd175dzfmjrg27pvvin3nzv3yi61k-busybox-1.36.1";
   };
 }
 
