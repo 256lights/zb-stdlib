@@ -5,6 +5,17 @@ If you have ideas or feedback, feel free to [start a discussion](https://github.
 If you like zb, consider giving the repository a star
 and/or [sponsoring @zombiezen](https://github.com/sponsors/zombiezen).
 
+## Scope of the standard library
+
+The zb standard library is intended to include derivations
+for common programming language toolchains and interpreters.
+The standard library is not intended to be a general package repository,
+nor support every programming language ecosystem.
+Due to zb's ability to download and use software from a variety of sources,
+it is expected (and encouraged!) that projects will emerge to package more specific software.
+The standard library is a success if such projects can interoperate
+and don't all have to reinvent common patterns.
+
 ## Contributing Code
 
 zb is open to accepting contributions.
