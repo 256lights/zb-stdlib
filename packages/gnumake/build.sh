@@ -20,6 +20,7 @@ CFLAGS="${CFLAGS:-\
   -DHAVE_FCNTL_H \
   -DHAVE_STDARG_H \
   -DHAVE_DIRENT_H \
+  -DHAVE_UNISTD_H \
   -DFILE_TIMESTAMP_HI_RES=0 \
   -DHAVE_DUP2 \
   -DHAVE_GETCWD \
@@ -28,6 +29,7 @@ CFLAGS="${CFLAGS:-\
   -DHAVE_STRCHR \
   -DHAVE_STRDUP \
   -DHAVE_STRERROR \
+  -DHAVE_STRSIGNAL \
   -DHAVE_VPRINTF \
   -DSTDC_HEADERS \
   -DHAVE_ANSI_COMPILER}"
@@ -72,4 +74,5 @@ echo "LINK make"
 # shellcheck disable=SC2086
 "$CC" $LDFLAGS -o make getopt.o getopt1.o ar.o arscan.o commands.o default.o dir.o expand.o file.o function.o implicit.o job.o main.o misc.o read.o remake.o rule.o signame.o strcache.o variable.o version.o vpath.o hash.o remote-stub.o getloadavg.o fnmatch.o glob.o
 
-install -D -m 755 make "${out?}/bin/make"
+mkdir -p "${out?}/bin"
+install -m 755 make "${out?}/bin/make"

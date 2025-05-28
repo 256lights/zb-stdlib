@@ -1,11 +1,12 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
+local seeds <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
 local gcc <const> = import "../gcc/gcc.lua"
 local gnumake <const> = import "../gnumake/gnumake.lua"
 local strings <const> = import "../../strings.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -46,33 +47,61 @@ function module.new(args)
   }
 end
 
-for system, seeds in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
-  local seeds <const> = seeds
   module[system] = tables.lazyModule {
     bootstrap = function()
       local version <const> = "5.2.15"
-      return derivation {
-        name = "bash-"..version;
-        pname = "bash";
-        version = version;
 
-        system = system;
-        builder = seeds.busybox.."/bin/sh";
-        args = { path "build.sh" };
+      local sys <const> = systems.parse(system)
+      if sys and sys.isLinux then
+        return derivation {
+          name = "bash-"..version;
+          pname = "bash";
+          version = version;
 
-        src = module.tarballs[version];
-        patches = patches;
+          system = system;
+          builder = seeds[system].busybox.."/bin/sh";
+          args = { path "build.sh" };
 
-        PATH = strings.makeBinPath {
-          gnumake[system].bootstrap,
-          seeds.busybox,
-          gcc[system].bootstrap,
-        };
-        LDFLAGS = { "-static" };
-        SOURCE_DATE_EPOCH = 0;
-        KBUILD_BUILD_TIMESTAMP = "@0";
-      }
+          src = module.tarballs[version];
+          patches = patches;
+
+          PATH = strings.makeBinPath {
+            gnumake[system].bootstrap,
+            seeds[system].busybox,
+            gcc[system].bootstrap,
+          };
+          LDFLAGS = { "-static" };
+          SOURCE_DATE_EPOCH = 0;
+          KBUILD_BUILD_TIMESTAMP = "@0";
+        }
+      elseif sys and sys.isMacOS then
+        return derivation {
+          name = "bash-"..version;
+          pname = "bash";
+          version = version;
+
+          system = system;
+          builder = "/bin/sh";
+          args = { path "build.sh" };
+
+          src = module.tarballs[version];
+          patches = patches;
+
+          PATH = strings.makeBinPath {
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
+            "/Library/Developer/CommandLineTools/usr",
+            "/usr",
+            "/",
+          };
+          __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
+          SOURCE_DATE_EPOCH = 0;
+          KBUILD_BUILD_TIMESTAMP = "@0";
+        }
+      else
+        return nil
+      end
     end;
 
     stdenv = function()

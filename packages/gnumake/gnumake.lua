@@ -2,9 +2,10 @@
 -- SPDX-License-Identifier: MIT
 
 local gcc <const> = import "../gcc/gcc.lua"
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
+local seeds <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
 local strings <const> = import "../../strings.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -54,32 +55,61 @@ function module.new(args)
   }
 end
 
-for system, seeds in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
-  local seeds <const> = seeds
   module[system] = tables.lazyModule {
     bootstrap = function()
       local version <const> = "3.82"
-      return derivation {
-        name = "gnumake-"..version;
-        pname = "gnumake";
-        version = version;
+      local sys <const> = systems.parse(system)
 
-        system = system;
-        builder = seeds.busybox.."/bin/sh";
-        args = { path "build.sh" };
+      if sys and sys.isLinux then
+        return derivation {
+          name = "gnumake-"..version;
+          pname = "gnumake";
+          version = version;
 
-        src = module.tarballs[version];
-        sourceRoot = "make-"..version;
-        patches = patches[version];
+          system = system;
+          builder = seeds[system].busybox.."/bin/sh";
+          args = { path "build.sh" };
 
-        PATH = strings.makeBinPath {
-          gcc[system].bootstrap,
-          seeds.busybox,
-        };
-        SOURCE_DATE_EPOCH = 0;
-        KBUILD_BUILD_TIMESTAMP = "@0";
-      }
+          src = module.tarballs[version];
+          sourceRoot = "make-"..version;
+          patches = patches[version];
+
+          PATH = strings.makeBinPath {
+            gcc[system].bootstrap,
+            seeds[system].busybox,
+          };
+          SOURCE_DATE_EPOCH = 0;
+          KBUILD_BUILD_TIMESTAMP = "@0";
+        }
+      elseif sys and sys.isMacOS then
+        return derivation {
+          name = "gnumake-"..version;
+          pname = "gnumake";
+          version = version;
+
+          system = system;
+          builder = "/bin/sh";
+          args = { path "build.sh" };
+
+          src = module.tarballs[version];
+          sourceRoot = "make-"..version;
+          patches = patches[version];
+
+          PATH = strings.makeBinPath {
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
+            "/Library/Developer/CommandLineTools/usr",
+            "/usr",
+            "/",
+          };
+          __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
+          SOURCE_DATE_EPOCH = 0;
+          KBUILD_BUILD_TIMESTAMP = "@0";
+        }
+      else
+        return nil
+      end
     end;
 
     stdenv = function()

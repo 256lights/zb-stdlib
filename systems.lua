@@ -153,6 +153,12 @@ local systemMetatable = {
   __name = "system";
 }
 
+---Supported systems for the standard library.
+stdlibSystems = {
+  "x86_64-unknown-linux",
+  "aarch64-apple-macos",
+}
+
 ---Parses a system string into a system,
 ---or returns nil if the string is not a valid system value.
 ---@param s string

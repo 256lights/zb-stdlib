@@ -14,10 +14,20 @@ printf '%s\n%s\n' \
   '#!/bin/sh' \
   'echo "#define PIPESIZE 65536"' >builtins/psize.sh
 
-./configure \
-  --prefix="${out?}" \
-  --enable-static-link \
-  --without-bash-malloc \
-  --disable-nls
+case "$(uname -s)" in
+  Darwin)
+    ./configure \
+      --prefix="${out?}" \
+      --without-bash-malloc \
+      --disable-nls
+    ;;
+  *)
+    ./configure \
+      --prefix="${out?}" \
+      --enable-static-link \
+      --without-bash-malloc \
+      --disable-nls
+    ;;
+esac
 make "-j${ZB_BUILD_CORES:-1}"
 make install
