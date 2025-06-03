@@ -9,6 +9,7 @@ local module <const> = {}
 
 module.builderScript = path "builder.sh"
 module.helpersNix = path "helpers-nix.sh"
+module.systems = systems.stdlibSystems
 
 ---@param sep string
 ---@param ... string
