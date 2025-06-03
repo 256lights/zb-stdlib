@@ -48,7 +48,8 @@ local function useMacOSARMSeed(targetSystem, version)
   if type(targetSystem) == "string" then
     targetSystem = systems.parse(targetSystem)
   end
-  return targetSystem and targetSystem.isMacOS and targetSystem.isARM and targetSystem.is64Bit and version == macOSARMSeedVersion
+  return targetSystem and targetSystem.isMacOS and targetSystem.isARM and targetSystem.is64Bit and
+  version == macOSARMSeedVersion
 end
 
 local bootstrapVersion <const> = "1.4-bootstrap-20171003"
@@ -141,6 +142,42 @@ ln -s "$out/share/go/bin"/* "$out/bin/"
 ]=];
     PATH = PATH;
   }
+end
+
+---Compute the environment variables to use to instruct Go to cross-compile for the given system.
+---@param system string|system
+---@return {GOOS: string, GOARCH: string}
+function module.envForSystem(system)
+  local parsed ---@type system
+  if type(system) == "string" then
+    parsed = systems.parse(system)
+  else
+    parsed = system
+  end
+  assert(parsed, string.format("invalid target system %q", system))
+
+  local result = {}
+  if parsed.isLinux then
+    result.GOOS = "linux"
+  elseif parsed.isMacOS then
+    result.GOOS = "darwin"
+  elseif parsed.isWindows then
+    result.GOOS = "windows"
+  else
+    error(string.format("unsupported OS for %q", tostring(parsed)))
+  end
+  if parsed.isX86 and parsed.is64Bit then
+    result.GOARCH = "amd64"
+  elseif parsed.isX86 and parsed.is32Bit then
+    result.GOARCH = "386"
+  elseif parsed.isARM and parsed.is64Bit then
+    result.GOARCH = "arm64"
+  elseif parsed.isARM and parsed.is32Bit then
+    result.GOARCH = "arm"
+  else
+    error(string.format("unsupported architecture for %q", tostring(parsed)))
+  end
+  return result
 end
 
 for _, system in ipairs(systems.stdlibSystems) do
