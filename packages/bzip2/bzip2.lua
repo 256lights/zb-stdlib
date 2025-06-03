@@ -1,7 +1,7 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -39,7 +39,7 @@ function module.new(args)
   }
 end
 
-for system in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
   module[system] = tables.lazyModule {
     stdenv = function()

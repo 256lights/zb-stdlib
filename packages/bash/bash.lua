@@ -1,7 +1,6 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local seeds <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
 local gcc <const> = import "../gcc/gcc.lua"
 local gnumake <const> = import "../gnumake/gnumake.lua"
@@ -36,6 +35,14 @@ function module.new(args)
   if not src then
     error("bash.new: unsupported version "..args.version)
   end
+  local buildSystem = systems.parse(args.buildSystem)
+  local configureFlags = {
+    "--without-bash-malloc",
+    "--disable-nls",
+  }
+  if buildSystem.isLinux then
+    configureFlags[#configureFlags+1] = "--enable-static-link"
+  end
   return args.makeDerivation {
     pname = "bash";
     version = args.version;
@@ -43,7 +50,7 @@ function module.new(args)
     src = src;
     patches = patches;
 
-    configureFlags = { "--enable-static-link", "--without-bash-malloc" };
+    configureFlags = configureFlags;
   }
 end
 
@@ -55,6 +62,7 @@ for _, system in ipairs(systems.stdlibSystems) do
 
       local sys <const> = systems.parse(system)
       if sys and sys.isLinux then
+        local seeds <const> = import "../../bootstrap/seeds.lua"
         return derivation {
           name = "bash-"..version;
           pname = "bash";

@@ -73,8 +73,8 @@ if [[ "${dontUnpack:-}" -ne 1 ]]; then
 
     # Make build directory writable and searchable.
     # (Usually needed if copied from a store directory.)
-    chmod -R u+w -- "$sourceRoot"
-    chmod +x -- "$sourceRoot"
+    chmod -R u+w "$sourceRoot"
+    chmod +x "$sourceRoot"
 
     cd "$sourceRoot"
   fi

@@ -15,22 +15,29 @@ function baseNameOf(path)
   return base
 end
 
----Cut a string with a separator
----and produces a list of strings which were separated by this separator.
----@param sep string
+---Returns a function that, each time it is called,
+---returns the next substring separated by a separator
+---along with its index in the string.
 ---@param s string
----@return string[]
-function splitString(sep, s)
-  local result = {}
-  local i = 1
-  while true do
+---@param sep string
+---@return fun(string, number): number|nil,string|nil
+---@return string
+---@return number
+function split(s, sep)
+  ---@param s string
+  ---@param i number
+  ---@return number|nil
+  ---@return string|nil
+  local function next(s, i)
+    if i > #s + 1 then return end
     local j = s:find(sep, i, true)
-    if not j then break end
-    result[#result + 1] = s:sub(i, j - 1)
-    i = j + #sep
+    if j then
+      return j + #sep, s:sub(i, j - 1)
+    else
+      return #s + 2, s:sub(i)
+    end
   end
-  result[#result + 1] = s:sub(i)
-  return result
+  return next, s, 1
 end
 
 ---Construct a Unix-style search path by appending `subDir`

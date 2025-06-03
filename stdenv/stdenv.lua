@@ -2,12 +2,34 @@
 -- SPDX-License-Identifier: MIT
 
 local strings <const> = import "../strings.lua"
+local systems <const> = import "../systems.lua"
 local tables <const> = import "../tables.lua"
 
 local module <const> = {}
 
 module.builderScript = path "builder.sh"
 module.helpersNix = path "helpers-nix.sh"
+
+---@param sep string
+---@param ... string
+---@return string
+local function concatStringLists(sep, ...)
+  local parts = {}
+  for i = 1, select("#", ...) do
+    local arg = select(i, ...)
+    local argType = type(arg)
+    if argType == "table" then
+      table.move(arg, 1, #arg, #parts + 1, parts)
+    elseif argType ~= "nil" then
+      for _, part in strings.split(tostring(arg), sep) do
+        if part ~= "" then
+          parts[#parts+1] = part
+        end
+      end
+    end
+  end
+  return table.concat(parts, sep)
+end
 
 ---@param bash string|derivation
 ---@param deps string|derivation[]
@@ -22,18 +44,9 @@ module.helpersNix = path "helpers-nix.sh"
 ---}
 ---@return derivation
 local function makeDerivation(bash, deps, args)
-  local binPath = strings.makeBinPath(deps)
-  local argsPath = args.PATH
-  local argsPathType = type(argsPath)
-  if argsPathType == "table" then
-    binPath = table.concat(argsPath, ":")..":"..binPath
-  elseif argsPathType ~= "nil" then
-    binPath = argsPath..":"..binPath
-  end
-
   args = tables.clone(args)
   args.system = args.buildSystem
-  args.PATH = binPath
+  args.PATH = concatStringLists(":", args.PATH, strings.makeBinPath(deps))
   if not args.name then
     local name = args.pname
     if not name then
@@ -69,11 +82,32 @@ end
 ---}
 ---@return derivation
 function module.makeBootstrapDerivation(args)
-  local gcc = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
+  local buildSystem = systems.parse(args.buildSystem)
   local gnumake = import("../packages/gnumake/gnumake.lua")[args.buildSystem].bootstrap
-  local busybox = import("../bootstrap/seeds.lua")[args.buildSystem].busybox
   local bash = import("../packages/bash/bash.lua")[args.buildSystem].bootstrap
-  return makeDerivation(bash, { gcc, gnumake, bash, busybox }, args)
+  if buildSystem.isLinux then
+    local gcc = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
+    local busybox = import("../bootstrap/seeds.lua")[args.buildSystem].busybox
+    return makeDerivation(bash, { gcc, gnumake, bash, busybox }, args)
+  elseif buildSystem.isMacOS then
+    local deps = {
+      gnumake,
+      bash,
+      "/Library/Developer/CommandLineTools/usr",
+      "/usr",
+      "/",
+    }
+    args = tables.clone(args)
+    args.SDKROOT = args.SDKROOT or "/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk"
+    args.__buildSystemDeps = concatStringLists(" ", args.__buildSystemDeps, {
+      "/Library/Developer/CommandLineTools",
+      "/usr",
+      "/bin",
+    })
+    return makeDerivation(bash, deps, args)
+  else
+    error(string.format("unsupported buildSystem = %s", args.buildSystem))
+  end
 end
 
 local function baseDeps(buildSystem)
@@ -124,7 +158,15 @@ end
 ---@return derivation
 function module.makeDerivation(args)
   local bash, deps = baseDeps(args.buildSystem)
-  deps[#deps+1] = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
+  local buildSystem = systems.parse(args.buildSystem)
+  if buildSystem.isMacOS then
+    deps[#deps+1] = "/Library/Developer/CommandLineTools/usr"
+    args = tables.clone(args)
+    args.SDKROOT = args.SDKROOT or "/Library/Developer/CommandLineTools/SDKs/MacOSX15.sdk"
+    args.__buildSystemDeps = concatStringLists(" ", args.__buildSystemDeps, "/Library/Developer/CommandLineTools")
+  else
+    deps[#deps+1] = import("../packages/gcc/gcc.lua")[args.buildSystem].bootstrap
+  end
   return makeDerivation(bash, deps, args)
 end
 

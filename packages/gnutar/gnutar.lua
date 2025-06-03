@@ -1,8 +1,8 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -27,15 +27,21 @@ function module.new(args)
   if not src then
     error("gnutar.new: unsupported version "..args.version)
   end
+  local buildSystem = systems.parse(args.buildSystem)
+  local LDFLAGS = {}
+  if buildSystem.isMacOS then
+    LDFLAGS[#LDFLAGS+1] = "-liconv"
+  end
   return args.makeDerivation {
     pname = "gnutar";
     version = args.version;
     buildSystem = args.buildSystem;
     src = src;
+    LDFLAGS = LDFLAGS;
   }
 end
 
-for system in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
   module[system] = tables.lazyModule {
     stdenv = function()

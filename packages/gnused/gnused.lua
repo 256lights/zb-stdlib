@@ -1,11 +1,22 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
+
+local patchDir48 <const> = path {
+  path = "patches/4.8";
+  name = "gnused-patches-4.8";
+  filter = function (name) return name:find(".diff$") ~= nil end
+}
+local patches <const> = {
+  ["4.8"] = {
+    patchDir48.."/01-noreturn.diff"
+  };
+}
 
 local tarballArgs <const> = {
   ["4.8"] = {
@@ -24,6 +35,7 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 ---makeDerivation: function,
 ---buildSystem: string,
 ---version: string,
+---i18n?: boolean,
 ---}
 ---@return derivation
 function module.new(args)
@@ -31,15 +43,22 @@ function module.new(args)
   if not src then
     error("gnused.new: unsupported version "..args.version)
   end
+  local configureFlags = {}
+  if not args.i18n then
+    configureFlags[#configureFlags+1] = "--disable-nls"
+    configureFlags[#configureFlags+1] = "--disable-i18n"
+  end
   return args.makeDerivation {
     pname = "gnused";
     version = args.version;
     buildSystem = args.buildSystem;
     src = src;
+    patches = patches[args.version];
+    configureFlags = configureFlags;
   }
 end
 
-for system in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
   module[system] = tables.lazyModule {
     stdenv = function()
