@@ -13,10 +13,34 @@ users with highly specific requirements can bootstrap their own userspace withou
 The zb standard library currently supports:
 
 - `x86_64-unknown-linux`
+- `aarch64-apple-macos`
 
-Support is planned for `x86_64-pc-windows-msvc` ([#1](https://github.com/256lights/zb-stdlib/issues/1)),
-`aarch64-apple-darwin` ([#6](https://github.com/256lights/zb-stdlib/issues/6)),
-and `aarch64-unknown-linux`.
+Support is planned for:
+
+- `x86_64-pc-windows-msvc` ([#1](https://github.com/256lights/zb-stdlib/issues/1))
+- `aarch64-unknown-linux` ([#24](https://github.com/256lights/zb-stdlib/issues/24))
+
+## System Dependencies
+
+The goal for the zb standard library is to be fully hermetic,
+but it's not quite there yet.
+For now, each platform requires some minimal software to be installed on builder system.
+
+### x86_64-unknown-linux
+
+Under `x86_64-unknown-linux`, the standard library requires a specific copy of GCC and BusyBox to be present in the zb store.
+The exact paths are listed in [bootstrap/seeds.lua](bootstrap/seeds.lua).
+The binary releases of zb for x86_64-unknown-linux include these store paths in their installation,
+so in most cases, you should not need to download these tools yourself.
+
+### aarch64-apple-macos
+
+Under `aarch64-apple-macos`, the standard library uses the compilers provided by Xcode Command Line Tools.
+To ensure these are installed, run the following:
+
+```shell
+xcode-select --install
+```
 
 ## License
 
