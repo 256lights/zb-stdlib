@@ -1,8 +1,8 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local strings <const> = import "../../strings.lua"
+local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
 local module <const> = {}
@@ -33,6 +33,23 @@ local tarballArgs <const> = {
     hash = "sha256:9dc77ffadc16d837a1bf32d99c624cb4df0647cee7b119edd9e7b1bcc05f2e00";
   };
 }
+
+local macOSARMSeedVersion <const> = "1.19.13"
+
+local macOSARMSeedArgs <const> = {
+  url = "https://go.dev/dl/go1.19.13.darwin-arm64.tar.gz";
+  hash = "sha256:022b35fa9c79b9457fa4a14fd9c4cf5f8ea315a8f2e3b3cd949fea55e11a7d7b";
+}
+
+---@param targetSystem string|table
+---@param version string
+---@return boolean
+local function useMacOSARMSeed(targetSystem, version)
+  if type(targetSystem) == "string" then
+    targetSystem = systems.parse(targetSystem)
+  end
+  return targetSystem and targetSystem.isMacOS and targetSystem.isARM and targetSystem.is64Bit and version == macOSARMSeedVersion
+end
 
 local bootstrapVersion <const> = "1.4-bootstrap-20171003"
 
@@ -69,8 +86,21 @@ module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 ---}
 ---@return derivation
 function module.new(args)
-  if args.version ~= bootstrapVersion and not args.go then
-    error("go.new: missing go")
+  if not args.go then
+    if useMacOSARMSeed(args.buildSystem, args.version) then
+      return args.makeDerivation {
+        pname = "go";
+        version = args.version;
+        buildSystem = args.buildSystem;
+        src = fetchurl(macOSARMSeedArgs);
+
+        dontConfigure = true;
+        dontBuild = true;
+
+        installPhase = "cp -a --reflink=auto . $out";
+      }
+    end
+    assert(args.version == bootstrapVersion, "go.new: missing go")
   end
   local src = module.tarballs[args.version]
   if not src then
@@ -113,13 +143,13 @@ ln -s "$out/share/go/bin"/* "$out/bin/"
   }
 end
 
-for system in pairs(bootstrap) do
+for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
   module[system] = tables.lazyMap(function(_, version)
     local stdenv <const> = import "../../stdenv/stdenv.lua"
     local minorVersion = version:match("^([0-9]+%.[0-9]+)")
     local go
-    if version ~= bootstrapVersion then
+    if version ~= bootstrapVersion and not useMacOSARMSeed(system, version) then
       go = module[system][bootstrapSequence[minorVersion]]
     end
     return module.new {
