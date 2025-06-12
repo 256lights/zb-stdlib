@@ -49,6 +49,7 @@ function module.new(args)
     buildSystem = args.buildSystem;
     src = src;
     patches = patches;
+    postInstall = [[ln -s bash "$out/bin/sh"]];
 
     configureFlags = configureFlags;
   }
