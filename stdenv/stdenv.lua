@@ -126,6 +126,7 @@ local function baseDeps(buildSystem)
     assert(import("../packages/gnused/gnused.lua")[buildSystem].stdenv),
     assert(import("../packages/gnutar/gnutar.lua")[buildSystem].stdenv),
     assert(import("../packages/gzip/gzip.lua")[buildSystem].stdenv),
+    assert(import("../packages/unzip/unzip.lua")[buildSystem].stdenv),
     assert(import("../packages/xz/xz.lua")[buildSystem].stdenv),
   }
 end
