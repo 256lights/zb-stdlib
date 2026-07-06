@@ -30,6 +30,9 @@ unpackFile() {
       *.tar.xz)
         tar -xJf "$src"
         ;;
+      *.zip)
+        unzip "$src"
+        ;;
       *)
         echo "unhandled source $src" >&2
         return 1
