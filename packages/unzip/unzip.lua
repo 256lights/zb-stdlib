@@ -33,7 +33,7 @@ function module.new(args)
     src = src;
     makeFile = "unix/Makefile";
     makeFlags = "CC=gcc";
-    buildPhase = [[make -f $makeFile $makeFlags generic]];
+    buildFlags = {"generic"};
     installPhase = '\z
       mkdir -p "$out/bin"\n\z
       mv unzip "$out/bin/unzip"\n';
