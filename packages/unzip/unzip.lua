@@ -36,7 +36,7 @@ function module.new(args)
     buildFlags = {"generic"};
     installPhase = '\z
       mkdir -p "$out/bin"\n\z
-      mv unzip "$out/bin/unzip"\n';
+      cp unzip "$out/bin/unzip"\n';
   }
 end
 
