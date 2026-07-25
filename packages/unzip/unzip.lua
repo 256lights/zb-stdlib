@@ -31,12 +31,9 @@ function module.new(args)
     version = args.version;
     buildSystem = args.buildSystem;
     src = src;
-    makeFile = "unix/Makefile";
-    makeFlags = "CC=gcc";
+    makeFlags = {"-f", "unix/Makefile", "CC=gcc", "prefix="};
     buildFlags = {"generic"};
-    installPhase = '\z
-      mkdir -p "$out/bin"\n\z
-      cp unzip "$out/bin/unzip"\n';
+    installPhase = "make install ${makeFlags:-} ${installFlags:-} prefix=${out?}";
   }
 end
 

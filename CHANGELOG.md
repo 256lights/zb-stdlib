@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased][]
 
+### Added
+
+- `unzip` is now included in the standard environment.
+  ([#35](https://github.com/256lights/zb-stdlib/pull/35))
+  Sources to the standard environment can now be zip archives.
+  Thank you to [@Abdiramen](https://github.com/Abdiramen)!
+
 ## [0.1.1][] - 2025-06-12
 
 Version 0.1.1 adds a `sh` binary into the standard environment.
