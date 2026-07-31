@@ -11,6 +11,7 @@ await esbuild.build({
   entryPoints: ['src/main.ts'],
   bundle: true,
   minify: true,
+  sourcemap: 'inline',
   platform: 'node',
   target: ['node24.0'],
   format: 'cjs',
