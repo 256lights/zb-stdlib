@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-[Unreleased]: https://github.com/256lights/zb-stdlib/compare/v0.1.1...main
+[Unreleased]: https://github.com/256lights/zb-stdlib/compare/v0.2.0...main
 
-## [Unreleased][]
+## [0.2.0][] - 2026-07-30
+
+Version 0.2 upgrades Go to 1.26
+and includes the [UnZip utility](https://infozip.sourceforge.net/UnZip.html).
+It's a release designed to prepare for [zb 0.2](https://github.com/256lights/zb/milestone/3).
+
+[0.2.0]: https://github.com/256lights/zb-stdlib/releases/tag/v0.2.0
 
 ### Added
 
