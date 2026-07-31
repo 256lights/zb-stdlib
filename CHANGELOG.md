@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Go packages are now keyed by major release
   (the number immediately after the "1.")
   instead of the minor version.
+- The `lazy` function in `tables.lua`
+  now uses the [built-in `lazy` function](https://zb.256lights.llc/lua/extensions#lazy)
+  if available.
 
 ## [0.1.1][] - 2025-06-12
 

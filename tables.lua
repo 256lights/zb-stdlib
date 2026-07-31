@@ -69,39 +69,41 @@ local function isLazyKey(x)
   return tp == "number" or tp == "string" or tp == "boolean"
 end
 
----A plug-compatible pure Lua implementation of lazy table
----(as specified in https://github.com/256lights/zb/issues/83).
----It does not perform memoization, so it may be frozen.
----@generic K: string|boolean|number
----@param f fun(t: table<K, any>, k: K): any
----@param init? table<K, any>
----@return table<K, any>
-function lazy(f, init)
-  local obj = {}
-  local ff = function(_, k)
-    if isLazyKey(k) then
-      return f(obj, k)
-    else
-      return nil
-    end
-  end
-  local mt = {
-    __index = ff;
-    __newindex = function()
-      error("cannot modify lazy table")
-    end;
-    __metatable = false;
-  }
-  if init then
-    local t = {}
-    for k, v in pairs(init) do
+if not lazy then
+  ---A plug-compatible pure Lua implementation of lazy table
+  ---for zb versions prior to 0.2.
+  ---It does not perform memoization so it can be frozen.
+  ---@generic K: string|boolean|number
+  ---@param f fun(t: table<K, any>, k: K): any
+  ---@param init? table<K, any>
+  ---@return table<K, any>
+  function lazy(f, init)
+    local obj = {}
+    local ff = function(_, k)
       if isLazyKey(k) then
-        t[k] = v
+        return f(obj, k)
+      else
+        return nil
       end
     end
-    mt.__index = setmetatable(t, { __index = ff })
+    local mt = {
+      __index = ff;
+      __newindex = function()
+        error("cannot modify lazy table")
+      end;
+      __metatable = false;
+    }
+    if init then
+      local t = {}
+      for k, v in pairs(init) do
+        if isLazyKey(k) then
+          t[k] = v
+        end
+      end
+      mt.__index = setmetatable(t, { __index = ff })
+    end
+    return setmetatable(obj, mt)
   end
-  return setmetatable(obj, mt)
 end
 
 ---Returns a lazy table derived from t
