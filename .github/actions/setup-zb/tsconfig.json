@@ -2,5 +2,11 @@
   "include": [
     "src/**/*.ts"
   ],
-  "noEmit": true
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "noImplicitAny": true
+  }
 }
