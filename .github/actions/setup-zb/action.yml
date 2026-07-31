@@ -1,0 +1,9 @@
+name: Set up zb
+description: Install zb
+author: The zb Authors
+inputs:
+  zb-version:
+    description: The zb version to download and use. Be sure to enclose this option in single quotation marks.
+runs:
+  using: node24
+  main: index.js
