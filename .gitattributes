@@ -1,2 +1,1 @@
-/.github/ export-ignore
 /.github/actions/setup-zb/dist/*.js text eol=lf -diff -merge
