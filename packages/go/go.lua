@@ -8,31 +8,56 @@ local tables <const> = import "../../tables.lua"
 local module <const> = {}
 
 local tarballArgs <const> = {
-  ["1.4-bootstrap-20171003"] = {
+  ["1.4"] = {
     url = "https://dl.google.com/go/go1.4-bootstrap-20171003.tar.gz";
     hash = "sha256:f4ff5b5eb3a3cae1c993723f3eab519c5bae18866b5e5f96fe1102f0cb5c3e52";
   };
-  ["1.17.13"] = {
+  ["1.17"] = {
     url = "https://go.dev/dl/go1.17.13.src.tar.gz";
     hash = "sha256:a1a48b23afb206f95e7bbaa9b898d965f90826f6f1d1fc0c1d784ada0cd300fd";
   };
-  ["1.19.13"] = {
+  ["1.19"] = {
     url = "https://go.dev/dl/go1.19.13.src.tar.gz";
     hash = "sha256:ccf36b53fb0024a017353c3ddb22c1f00bc7a8073c6aac79042da24ee34434d3";
   };
-  ["1.21.13"] = {
+  ["1.21"] = {
     url = "https://go.dev/dl/go1.21.13.src.tar.gz";
     hash = "sha256:71fb31606a1de48d129d591e8717a63e0c5565ffba09a24ea9f899a13214c34d";
   };
-  ["1.23.7"] = {
-    url = "https://go.dev/dl/go1.23.7.src.tar.gz";
-    hash = "sha256:7cfabd46b73eb4c26b19d69515dd043d7183a6559acccd5cfdb25eb6b266a458";
+  ["1.23"] = {
+    url = "https://go.dev/dl/go1.23.12.src.tar.gz";
+    hash = "sha256:e1cce9379a24e895714a412c7ddd157d2614d9edbe83a84449b6e1840b4f1226";
   };
-  ["1.24.2"] = {
-    url = "https://go.dev/dl/go1.24.2.src.tar.gz";
-    hash = "sha256:9dc77ffadc16d837a1bf32d99c624cb4df0647cee7b119edd9e7b1bcc05f2e00";
+  ["1.24"] = {
+    url = "https://go.dev/dl/go1.24.13.src.tar.gz";
+    hash = "sha256:639a6204c2486b137df1eb6e78ee3ed038f9877d0e4b5a465e796a2153f858d7";
+  };
+  ["1.25"] = {
+    url = "https://go.dev/dl/go1.25.12.src.tar.gz";
+    hash = "sha256:f90dcee4bd023fa376374ea0a5a6ebe553537b39c426ffd8c689469b45519932";
+  };
+  ["1.26"] = {
+    url = "https://go.dev/dl/go1.26.5.src.tar.gz";
+    hash = "sha256:495be4bc87176ac567392e5b4116abd98466d33d7b49d41e764ccc6976b2dc42";
   };
 }
+
+---@param url string
+---@return string
+local function versionForURL(url)
+  local v = url:match("/go([^/]+)%.tar%.gz$")
+  assert(v, url.." does not not name a Go tarball")
+  if v:match(".src$") then
+    v = v:sub(1, -5)
+  end
+  return v
+end
+
+---@param version string
+---@return string
+local function trimPatch(version)
+  return version:match("^([0-9]+%.[0-9]+)")
+end
 
 local macOSARMSeedVersion <const> = "1.19.13"
 
@@ -49,10 +74,10 @@ local function useMacOSARMSeed(targetSystem, version)
     targetSystem = systems.parse(targetSystem)
   end
   return targetSystem and targetSystem.isMacOS and targetSystem.isARM and targetSystem.is64Bit and
-  version == macOSARMSeedVersion
+  version == trimPatch(macOSARMSeedVersion)
 end
 
-local bootstrapVersion <const> = "1.4-bootstrap-20171003"
+local bootstrapVersion <const> = "1.4"
 
 local bootstrapSequence <const> = {
   ["1.5"] = bootstrapVersion;
@@ -70,11 +95,13 @@ local bootstrapSequence <const> = {
   ["1.17"] = bootstrapVersion;
   ["1.18"] = bootstrapVersion;
   ["1.19"] = bootstrapVersion;
-  ["1.20"] = "1.19.13"; -- >1.17
-  ["1.21"] = "1.19.13"; -- >1.17
-  ["1.22"] = "1.21.13"; -- >1.20
-  ["1.23"] = "1.21.13"; -- >1.20
-  ["1.24"] = "1.23.7";  -- >1.22
+  ["1.20"] = "1.19"; -- >=1.17
+  ["1.21"] = "1.19"; -- >=1.17
+  ["1.22"] = "1.21"; -- >=1.20
+  ["1.23"] = "1.21"; -- >=1.20
+  ["1.24"] = "1.23";  -- >=1.22
+  ["1.25"] = "1.23";  -- >=1.22
+  ["1.26"] = "1.25";  -- >=1.24
 }
 
 module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
@@ -91,7 +118,7 @@ function module.new(args)
     if useMacOSARMSeed(args.buildSystem, args.version) then
       return args.makeDerivation {
         pname = "go";
-        version = args.version;
+        version = macOSARMSeedVersion;
         buildSystem = args.buildSystem;
         src = fetchurl(macOSARMSeedArgs);
 
@@ -113,7 +140,7 @@ function module.new(args)
   end
   return args.makeDerivation {
     pname = "go";
-    version = args.version;
+    version = versionForURL(tarballArgs[args.version].url);
     buildSystem = args.buildSystem;
     src = src;
 
@@ -184,10 +211,9 @@ for _, system in ipairs(systems.stdlibSystems) do
   local system <const> = system
   module[system] = tables.lazyMap(function(_, version)
     local stdenv <const> = import "../../stdenv/stdenv.lua"
-    local minorVersion = version:match("^([0-9]+%.[0-9]+)")
     local go
     if version ~= bootstrapVersion and not useMacOSARMSeed(system, version) then
-      go = module[system][bootstrapSequence[minorVersion]]
+      go = module[system][bootstrapSequence[version]]
     end
     return module.new {
       makeDerivation = stdenv.makeDerivation;
