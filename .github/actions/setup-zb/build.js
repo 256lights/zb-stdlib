@@ -13,5 +13,6 @@ await esbuild.build({
   minify: true,
   platform: 'node',
   target: ['node24.0'],
+  format: 'esm',
   outfile: 'dist/main.js',
 });
