@@ -11,8 +11,9 @@
   ],
   "private": true,
   "type": "module",
-  "main": "index.js",
+  "main": "dist/main.js",
   "scripts": {
+    "build": "node build.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
@@ -23,5 +24,10 @@
     "@actions/exec": "^3.0.0",
     "@actions/github": "^9.1.1",
     "@actions/tool-cache": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "esbuild": "^0.28.1",
+    "typescript": "^7.0.2"
   }
 }

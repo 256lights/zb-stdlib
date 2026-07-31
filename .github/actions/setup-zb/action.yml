@@ -6,4 +6,4 @@ inputs:
     description: The zb version to download and use. Be sure to enclose this option in single quotation marks.
 runs:
   using: node24
-  main: index.js
+  main: dist/main.js

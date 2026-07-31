@@ -1,5 +1,8 @@
-// Copyright 2026 The zb Authors
-// SPDX-License-Identifier: MIT
+/**
+ * @license
+ * Copyright 2026 The zb Authors
+ * SPDX-License-Identifier: MIT
+ */
 
 import * as process from 'node:process';
 import path from 'node:path';
@@ -8,6 +11,20 @@ import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { getOctokit } from '@actions/github';
 import { downloadTool, extractTar, extractZip } from '@actions/tool-cache';
+
+interface Release {
+  tagName: string;
+  releaseAssets: ReleaseAssetConnection;
+}
+
+interface ReleaseAssetConnection {
+  nodes: ReleaseAsset[];
+}
+
+interface ReleaseAsset {
+  name: string;
+  downloadUrl: string;
+}
 
 const releaseFragment =
   `
@@ -57,17 +74,19 @@ const releaseFragment =
           ${releaseFragment}
         `,
     };
+  const graphqlResponse = await octokit.graphql<{
+    repository: {
+      release: Release | null;
+    }
+  }>(graphqlRequest);
+  const release = graphqlResponse.repository.release;
+  const releaseAssets = release?.releaseAssets?.nodes || [];
 
-  const release = (await octokit.graphql(graphqlRequest)).repository.release;
-  /** @type {{name: string, downloadUrl: string}[] | undefined} */
-  const releaseAssets = release?.releaseAssets?.nodes;
-
-  /** @type {{name: string, downloadUrl: string} | undefined} */
-  let asset;
+  let asset: ReleaseAsset | undefined;
   if (process.platform === 'darwin' && process.arch === 'arm64') {
-    const asset = releaseAssets.find(({ name }) => name.includes('aarch64-apple-macos'))
+    asset = releaseAssets.find(({ name }) => name.includes('aarch64-apple-macos'))
   } else if (process.platform === 'linux' && process.arch === 'x64') {
-    const asset = releaseAssets.find(({ name }) => name.includes('x86_64-unknown-linux'))
+    asset = releaseAssets.find(({ name }) => name.includes('x86_64-unknown-linux'))
   }
   if (!asset) {
     core.setFailed(`No download found for ${process.arch}-${process.platform} version ${release?.tagName || version}`);
@@ -78,5 +97,5 @@ const releaseFragment =
   const zbExtractedFolderPath = asset.downloadUrl.endsWith('.zip') ?
     await extractZip(zbArchivePath) :
     await extractTar(zbArchivePath);
-  await exec(path.join(zbArchivePath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
+  await exec(path.join(zbExtractedFolderPath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
 })();
