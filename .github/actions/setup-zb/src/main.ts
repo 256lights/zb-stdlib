@@ -49,7 +49,7 @@ const releaseFragment =
         query:
           `
           query releaseAssetsForVersion($tagName: String!) {
-            repository(owner: "256lights", repo: "zb") {
+            repository(owner: "256lights", name: "zb") {
               release(tagName: $tagName) {
                 ...releaseFields
               }
@@ -64,7 +64,7 @@ const releaseFragment =
         query:
           `
           query releaseAssetsForLatest {
-            repository(owner: "256lights", repo: "zb") {
+            repository(owner: "256lights", name: "zb") {
               release: latestRelease {
                 ...releaseFields
               }

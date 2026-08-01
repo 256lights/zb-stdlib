@@ -27890,7 +27890,7 @@ var releaseFragment = `
   const graphqlRequest = version ? {
     query: `
           query releaseAssetsForVersion($tagName: String!) {
-            repository(owner: "256lights", repo: "zb") {
+            repository(owner: "256lights", name: "zb") {
               release(tagName: $tagName) {
                 ...releaseFields
               }
@@ -27903,7 +27903,7 @@ var releaseFragment = `
   } : {
     query: `
           query releaseAssetsForLatest {
-            repository(owner: "256lights", repo: "zb") {
+            repository(owner: "256lights", name: "zb") {
               release: latestRelease {
                 ...releaseFields
               }
