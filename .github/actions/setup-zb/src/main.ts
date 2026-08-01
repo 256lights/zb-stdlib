@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import * as process from 'node:process';
+import fs from 'node:fs/promises';
+import process from 'node:process';
 import path from 'node:path';
 
 import * as core from '@actions/core';
@@ -112,5 +113,32 @@ function archiveBaseName(name: string): string {
   const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
 
   core.info(`Running installer...`);
-  await exec(path.join(zbExtractedFolderPath, archiveBaseName(asset.name), 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
+  const installerPath = path.join(zbExtractedFolderPath, archiveBaseName(asset.name), 'install');
+  await core.group("Installer output", () => exec(installerPath, [
+    '--single-user',
+    '--no-systemd',
+    '--no-launchd',
+  ]));
+
+  const installerStorePath = path.join(zbExtractedFolderPath, archiveBaseName(asset.name), 'store');
+  const objectNames = await fs.readdir(installerStorePath);
+  const zbStoreDirectory = process.platform === 'win32' ? 'C:\\zb\\store' : '/opt/zb/store';
+  const zbBins = await Promise.all(
+    objectNames
+      .filter((name) => name.match(/-zb-/))
+      .map(async (name) => {
+        const binPath = path.join(zbStoreDirectory, name, 'bin');
+        try {
+          await fs.lstat(binPath);
+        } catch {
+          return null;
+        }
+        return binPath;
+      })
+  );
+  for (const binPath of zbBins) {
+    if (binPath) {
+      core.addPath(binPath);
+    }
+  }
 })();
