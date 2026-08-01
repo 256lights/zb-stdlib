@@ -27893,6 +27893,9 @@ function extractArchive(file, name) {
     return extractTar(file);
   }
 }
+function archiveBaseName(name) {
+  return name.match(/^(.*)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)[1];
+}
 (async () => {
   const octokit = getOctokit(getInput("github-token", { required: true }));
   const version = getInput("zb-version");
@@ -27939,7 +27942,7 @@ function extractArchive(file, name) {
   const zbArchivePath = await downloadTool(asset.downloadUrl);
   const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
   info(`Running installer...`);
-  await exec(import_node_path.default.join(zbExtractedFolderPath, "install"), ["--single-user", "--no-systemd", "--no-launchd"]);
+  await exec(import_node_path.default.join(zbExtractedFolderPath, archiveBaseName(asset.name), "install"), ["--single-user", "--no-systemd", "--no-launchd"]);
 })();
 /**
  * @license

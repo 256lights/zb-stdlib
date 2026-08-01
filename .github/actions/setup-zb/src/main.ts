@@ -49,6 +49,10 @@ function extractArchive(file: string, name?: string): Promise<string> {
   }
 }
 
+function archiveBaseName(name: string): string {
+  return name.match(/^(.*)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)![1];
+}
+
 (async () => {
   const octokit = getOctokit(core.getInput('github-token', { required: true }));
 
@@ -108,5 +112,5 @@ function extractArchive(file: string, name?: string): Promise<string> {
   const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
 
   core.info(`Running installer...`);
-  await exec(path.join(zbExtractedFolderPath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
+  await exec(path.join(zbExtractedFolderPath, archiveBaseName(asset.name), 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
 })();
