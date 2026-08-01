@@ -10,8 +10,7 @@ import * as esbuild from 'esbuild';
 await esbuild.build({
   entryPoints: ['src/main.ts'],
   bundle: true,
-  minify: true,
-  sourcemap: 'inline',
+  minify: false,
   platform: 'node',
   target: ['node24.0'],
   format: 'cjs',
