@@ -25,5 +25,9 @@
 		"Lua.workspace.ignoreDir": [
 			".vscode",
 		],
+		"js/ts.tsdk.path": "${workspaceFolder}/.github/actions/setup-zb/node_modules/typescript",
+		"[typescript]": {
+			"editor.defaultFormatter": "vscode.typescript-language-features",
+		},
 	}
 }
