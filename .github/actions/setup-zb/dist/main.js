@@ -27884,6 +27884,15 @@ var releaseFragment = `
       }
     }
   `;
+function extractArchive(file, name) {
+  if ((name || file).endsWith(".zip")) {
+    return extractZip(file);
+  } else if ((name || file).endsWith(".tar.bz2")) {
+    return extractTar(file, void 0, "xj");
+  } else {
+    return extractTar(file);
+  }
+}
 (async () => {
   const octokit = getOctokit(getInput("github-token", { required: true }));
   const version = getInput("zb-version");
@@ -27928,7 +27937,7 @@ var releaseFragment = `
   }
   info(`Downloading from ${asset.downloadUrl}...`);
   const zbArchivePath = await downloadTool(asset.downloadUrl);
-  const zbExtractedFolderPath = asset.downloadUrl.endsWith(".zip") ? await extractZip(zbArchivePath) : await extractTar(zbArchivePath);
+  const zbExtractedFolderPath = await extractArchive(zbArchivePath);
   info(`Running installer...`);
   await exec(import_node_path.default.join(zbExtractedFolderPath, "install"), ["--single-user", "--no-systemd", "--no-launchd"]);
 })();

@@ -39,6 +39,16 @@ const releaseFragment =
     }
   `;
 
+function extractArchive(file: string, name?: string): Promise<string> {
+  if ((name || file).endsWith('.zip')) {
+    return extractZip(file);
+  } else if ((name || file).endsWith('.tar.bz2')) {
+    return extractTar(file, undefined, 'xj');
+  } else {
+    return extractTar(file);
+  }
+}
+
 (async () => {
   const octokit = getOctokit(core.getInput('github-token', { required: true }));
 
@@ -95,9 +105,7 @@ const releaseFragment =
   core.info(`Downloading from ${asset.downloadUrl}...`);
 
   const zbArchivePath = await downloadTool(asset.downloadUrl);
-  const zbExtractedFolderPath = asset.downloadUrl.endsWith('.zip') ?
-    await extractZip(zbArchivePath) :
-    await extractTar(zbArchivePath);
+  const zbExtractedFolderPath = await extractArchive(zbArchivePath);
 
   core.info(`Running installer...`);
   await exec(path.join(zbExtractedFolderPath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
