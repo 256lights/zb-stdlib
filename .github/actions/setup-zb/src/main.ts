@@ -92,10 +92,13 @@ const releaseFragment =
     core.setFailed(`No download found for ${process.arch}-${process.platform} version ${release?.tagName || version}`);
     return;
   }
+  core.info(`Downloading from ${asset.downloadUrl}...`);
 
   const zbArchivePath = await downloadTool(asset.downloadUrl);
   const zbExtractedFolderPath = asset.downloadUrl.endsWith('.zip') ?
     await extractZip(zbArchivePath) :
     await extractTar(zbArchivePath);
+
+  core.info(`Running installer...`);
   await exec(path.join(zbExtractedFolderPath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
 })();

@@ -27926,8 +27926,10 @@ var releaseFragment = `
     setFailed(`No download found for ${process2.arch}-${process2.platform} version ${release?.tagName || version}`);
     return;
   }
+  info(`Downloading from ${asset.downloadUrl}...`);
   const zbArchivePath = await downloadTool(asset.downloadUrl);
   const zbExtractedFolderPath = asset.downloadUrl.endsWith(".zip") ? await extractZip(zbArchivePath) : await extractTar(zbArchivePath);
+  info(`Running installer...`);
   await exec(import_node_path.default.join(zbExtractedFolderPath, "install"), ["--single-user", "--no-systemd", "--no-launchd"]);
 })();
 /**
