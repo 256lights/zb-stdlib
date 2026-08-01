@@ -27885,7 +27885,7 @@ var releaseFragment = `
     }
   `;
 (async () => {
-  const octokit = getOctokit("");
+  const octokit = getOctokit(getInput("github-token", { required: true }));
   const version = getInput("zb-version");
   const graphqlRequest = version ? {
     query: `
@@ -27898,7 +27898,7 @@ var releaseFragment = `
           }
 
           ${releaseFragment}
-        `,
+          `,
     tagName: "v" + version
   } : {
     query: `
@@ -27911,7 +27911,7 @@ var releaseFragment = `
           }
 
           ${releaseFragment}
-        `
+          `
   };
   const graphqlResponse = await octokit.graphql(graphqlRequest);
   const release = graphqlResponse.repository.release;
