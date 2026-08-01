@@ -105,7 +105,7 @@ function extractArchive(file: string, name?: string): Promise<string> {
   core.info(`Downloading from ${asset.downloadUrl}...`);
 
   const zbArchivePath = await downloadTool(asset.downloadUrl);
-  const zbExtractedFolderPath = await extractArchive(zbArchivePath);
+  const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
 
   core.info(`Running installer...`);
   await exec(path.join(zbExtractedFolderPath, 'install'), ['--single-user', '--no-systemd', '--no-launchd']);
