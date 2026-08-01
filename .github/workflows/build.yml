@@ -16,5 +16,7 @@ jobs:
         uses: actions/checkout@v7
       - name: Install zb
         uses: $/.github/actions/setup-zb
+        with:
+          zb-version: '0.2.0-beta1'
       - name: Check zb version
         run: zb --version
