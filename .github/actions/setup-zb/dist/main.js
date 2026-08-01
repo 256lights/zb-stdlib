@@ -27894,7 +27894,7 @@ function extractArchive(file, name) {
   }
 }
 function archiveBaseName(name) {
-  return name.match(/^(.*)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)[1];
+  return name.match(/^(.*?)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)[1];
 }
 (async () => {
   const octokit = getOctokit(getInput("github-token", { required: true }));

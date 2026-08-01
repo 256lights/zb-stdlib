@@ -50,7 +50,7 @@ function extractArchive(file: string, name?: string): Promise<string> {
 }
 
 function archiveBaseName(name: string): string {
-  return name.match(/^(.*)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)![1];
+  return name.match(/^(.*?)(?:\.(?:zip|tar\.gz|tar\.bz2))?$/)![1];
 }
 
 (async () => {
