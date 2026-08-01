@@ -28013,12 +28013,12 @@ function archiveBaseName(name) {
     setFailed(`No download found for ${import_node_process.default.arch}-${import_node_process.default.platform} version ${release?.tagName || version}`);
     return;
   }
-  info(`Downloading from ${asset.downloadUrl}...`);
-  const zbArchivePath = await downloadTool(asset.downloadUrl);
-  const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
-  info(`Running installer...`);
+  const zbExtractedFolderPath = await group(`Downloading ${asset.downloadUrl}`, async () => {
+    const zbArchivePath = await downloadTool(asset.downloadUrl);
+    return extractArchive(zbArchivePath, asset.name);
+  });
   const installerPath = import_node_path.default.join(zbExtractedFolderPath, archiveBaseName(asset.name), "install");
-  await group("Installer output", () => exec(installerPath, [
+  await group("Running installer", () => exec(installerPath, [
     "--single-user",
     "--no-systemd",
     "--no-launchd"

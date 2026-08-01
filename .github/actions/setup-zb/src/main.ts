@@ -107,14 +107,14 @@ function archiveBaseName(name: string): string {
     core.setFailed(`No download found for ${process.arch}-${process.platform} version ${release?.tagName || version}`);
     return;
   }
-  core.info(`Downloading from ${asset.downloadUrl}...`);
 
-  const zbArchivePath = await downloadTool(asset.downloadUrl);
-  const zbExtractedFolderPath = await extractArchive(zbArchivePath, asset.name);
+  const zbExtractedFolderPath = await core.group(`Downloading ${asset.downloadUrl}`, async () => {
+    const zbArchivePath = await downloadTool(asset.downloadUrl);
+    return extractArchive(zbArchivePath, asset.name);
+  });
 
-  core.info(`Running installer...`);
   const installerPath = path.join(zbExtractedFolderPath, archiveBaseName(asset.name), 'install');
-  await core.group("Installer output", () => exec(installerPath, [
+  await core.group('Running installer', () => exec(installerPath, [
     '--single-user',
     '--no-systemd',
     '--no-launchd',
