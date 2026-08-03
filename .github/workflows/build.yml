@@ -15,7 +15,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v7
       - name: Install zb
-        uses: 256lights/setup-zb@07928bc175ec349d2965c9af0fcf6a9108606f7e
+        uses: 256lights/setup-zb@b2dce33946edaed1481e490a6cd8170f6e93d488
         with:
           zb-version: '0.2.0-beta1'
       - name: Check zb version
