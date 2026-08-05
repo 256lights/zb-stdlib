@@ -17,6 +17,40 @@ jobs:
       - name: Install zb
         uses: 256lights/setup-zb@v1
         with:
-          zb-version: '0.2.0-beta1'
+          zb-version: '0.2.0-beta3'
+          signing-key: ${{ secrets.ZB_SIGNING_KEY }}
+          configuration: >-
+            {
+              "trustedPublicKeys": [
+                {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
+              ],
+              "server": {
+                "download": {
+                  "type": "http",
+                  "url": "https://zb-cache.256lights.llc/store.json",
+                },
+              },
+            }
+          server-upload-discovery: >-
+            {
+              "_links": {
+                "https://zb-build.dev/api/rel/narinfo": [
+                  {
+                    "href": "gs://zb-stdlib-cache/{digest}.narinfo",
+                    "templated": true
+                  }
+                ],
+                "https://zb-build.dev/api/rel/nar": {
+                  "href": "gs://zb-stdlib-cache/nar/{digest}.nar",
+                  "templated": true
+                },
+                "https://zb-build.dev/api/rel/realization": [
+                  {
+                    "href": "gs://zb-stdlib-cache/realizations/{hashDigest}.json",
+                    "templated": true
+                  }
+                ]
+              }
+            }
       - name: Build gcc
         run: zb build 'packages/gcc/gcc.lua#bootstrap'
