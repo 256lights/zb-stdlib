@@ -31,7 +31,6 @@ jobs:
       - uses: google-github-actions/auth@v3
         if: github.event_name == 'push'
         with:
-          project_id: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
           workload_identity_provider: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
       - uses: 256lights/setup-zb@v1
         if: github.event_name != 'push'
