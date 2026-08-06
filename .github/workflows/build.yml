@@ -11,26 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
+    env:
+      my_zb_version: '0.2.0-beta3'
+      my_zb_config: >-
+        {
+          "trustedPublicKeys": [
+            {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
+          ],
+          "server": {
+            "download": {
+              "type": "http",
+              "url": "https://zb-cache.256lights.llc/store.json",
+            },
+          },
+        }
     steps:
-      - name: Check out code
-        uses: actions/checkout@v7
-      - name: Install zb
+      - uses: actions/checkout@v7
+      - uses: google-github-actions/auth@v3
+        if: github.event_name == 'push'
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      - uses: 256lights/setup-zb@v1
+        if: github.event_name != 'push'
+        with:
+          zb-version: ${{ env.my_zb_version }}
+          configuration: ${{ env.my_zb_config }}
+      - name: Set up zb with upload settings
+        if: github.event_name == 'push'
         uses: 256lights/setup-zb@v1
         with:
-          zb-version: '0.2.0-beta3'
+          zb-version: ${{ env.my_zb_version }}
+          configuration: ${{ env.my_zb_config }}
           signing-key: ${{ secrets.ZB_SIGNING_KEY }}
-          configuration: >-
-            {
-              "trustedPublicKeys": [
-                {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
-              ],
-              "server": {
-                "download": {
-                  "type": "http",
-                  "url": "https://zb-cache.256lights.llc/store.json",
-                },
-              },
-            }
           server-upload-discovery: >-
             {
               "_links": {
