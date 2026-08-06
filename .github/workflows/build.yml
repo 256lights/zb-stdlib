@@ -21,7 +21,6 @@ jobs:
           signing-key: ${{ secrets.ZB_SIGNING_KEY }}
           configuration: >-
             {
-              "debug": true,
               "trustedPublicKeys": [
                 {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
               ],
