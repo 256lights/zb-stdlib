@@ -13,7 +13,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      my_zb_version: '0.2.0-beta3'
+      my_zb_version: '0.2.0-beta4'
       my_zb_config: >-
         {
           "trustedPublicKeys": [
