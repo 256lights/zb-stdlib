@@ -8,7 +8,8 @@ local strings <const> = import "../../strings.lua"
 local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["5.2.15"] = {
@@ -24,104 +25,101 @@ local patches <const> = {
   path "patches/5.2.15/02-omit-rdynamic.diff",
 }
 
+---@generic T
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
 ---version: string,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
     error("bash.new: unsupported version "..args.version)
   end
-  local buildSystem = systems.parse(args.buildSystem)
-  local configureFlags = {
-    "--without-bash-malloc",
-    "--disable-nls",
-  }
-  if buildSystem.isLinux then
-    configureFlags[#configureFlags+1] = "--enable-static-link"
-  end
-  return args.makeDerivation {
-    pname = "bash";
-    version = args.version;
-    buildSystem = args.buildSystem;
-    src = src;
-    patches = patches;
-    postInstall = [[ln -s bash "$out/bin/sh"]];
+  return tables.withOutputs(args, function(args, system)
+    local buildSystem = systems.parse(system)
+    local configureFlags = {
+      "--without-bash-malloc",
+      "--disable-nls",
+    }
+    if buildSystem.isLinux then
+      configureFlags[#configureFlags + 1] = "--enable-static-link"
+    end
+    return outputs(args.makeDerivation {
+      pname = "bash";
+      version = args.version;
+      src = src;
+      patches = patches;
+      postInstall = [[ln -s bash "$out/bin/sh"]];
 
-    configureFlags = configureFlags;
+      configureFlags = configureFlags;
+    }, system)
+  end)
+end
+
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "5.2.15";
   }
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    bootstrap = function()
-      local version <const> = "5.2.15"
+function getters.bootstrap()
+  local version <const> = "5.2.15"
 
-      local sys <const> = systems.parse(system)
-      if sys and sys.isLinux then
-        local seeds <const> = import "../../bootstrap/seeds.lua"
-        return derivation {
-          name = "bash-"..version;
-          pname = "bash";
-          version = version;
+  return tables.withOutputs({ version = version }, function(_self, system)
+    local sys <const> = systems.parse(system)
+    if sys and sys.isLinux then
+      local seeds <const> = import "../../bootstrap/seeds.lua"
+      return outputs(derivation {
+        name = "bash-"..version;
+        pname = "bash";
+        version = version;
 
-          system = system;
-          builder = seeds[system].busybox.."/bin/sh";
-          args = { path "build.sh" };
+        system = system;
+        builder = strings.defaultOutput(seeds[system].busybox, system).."/bin/sh";
+        args = { path "build.sh" };
 
-          src = module.tarballs[version];
-          patches = patches;
+        src = module.tarballs[version];
+        patches = patches;
 
-          PATH = strings.makeBinPath {
-            gnumake[system].bootstrap,
-            seeds[system].busybox,
-            gcc[system].bootstrap,
-          };
-          LDFLAGS = { "-static" };
-          SOURCE_DATE_EPOCH = 0;
-          KBUILD_BUILD_TIMESTAMP = "@0";
-        }
-      elseif sys and sys.isMacOS then
-        return derivation {
-          name = "bash-"..version;
-          pname = "bash";
-          version = version;
+        PATH = strings.makeBinPath(system, {
+          gnumake.bootstrap,
+          seeds[system].busybox,
+          gcc.bootstrap,
+        });
+        LDFLAGS = { "-static" };
+        SOURCE_DATE_EPOCH = 0;
+        KBUILD_BUILD_TIMESTAMP = "@0";
+      }, system)
+    elseif sys and sys.isMacOS then
+      return outputs(derivation {
+        name = "bash-"..version;
+        pname = "bash";
+        version = version;
 
-          system = system;
-          builder = "/bin/sh";
-          args = { path "build.sh" };
+        system = system;
+        builder = "/bin/sh";
+        args = { path "build.sh" };
 
-          src = module.tarballs[version];
-          patches = patches;
+        src = module.tarballs[version];
+        patches = patches;
 
-          PATH = strings.makeBinPath {
-            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
-            "/Library/Developer/CommandLineTools/usr",
-            "/usr",
-            "/",
-          };
-          __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
-          SOURCE_DATE_EPOCH = 0;
-          KBUILD_BUILD_TIMESTAMP = "@0";
-        }
-      else
-        return nil
-      end
-    end;
-
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "5.2.15";
-      }
-    end;
-  }
+        PATH = strings.makeBinPath(system, {
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
+          "/Library/Developer/CommandLineTools/usr",
+          "/usr",
+          "/",
+        });
+        __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
+        SOURCE_DATE_EPOCH = 0;
+        KBUILD_BUILD_TIMESTAMP = "@0";
+      }, system)
+    else
+      error("bash.bootstrap: unsupported system "..system)
+    end
+  end)
 end
 
 return module

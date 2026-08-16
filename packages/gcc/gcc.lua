@@ -28,7 +28,6 @@ module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 --- Creates a wrapper script that always includes GCC's includes and libraries.
 ---@param args {
----buildSystem: string,
 ---targetSystem: string,
 ---gcc: derivation|string,
 ---coreutils: derivation|string,
@@ -59,44 +58,42 @@ function module.makeWrapper(args)
       end
     end
   end
-  local sh = args.sh.."/bin/sh"
-  return derivation {
-    name = "gcc-"..version;
-    pname = "gcc";
-    version = version;
 
-    system = args.buildSystem;
-    builder = sh;
-    args = { path "make-wrapper.sh" };
+  return tables.withOutputs(args, function(args, system)
+    local sh = strings.defaultOutput(args.sh, system).."/bin/sh"
+    return derivation {
+      name = "gcc-"..version;
+      pname = "gcc";
+      version = version;
 
-    template = path "wrapper.sh";
-    PATH = strings.makeBinPath {
-      args.gcc,
-      args.sh,
-      args.coreutils,
-    };
-    gcc = args.gcc;
-    targetSystem = args.targetSystem;
-    runtimeShell = sh;
-  }
+      system = system;
+      builder = sh;
+      args = { path "make-wrapper.sh" };
+
+      template = path "wrapper.sh";
+      PATH = strings.makeBinPath(system, {
+        args.gcc,
+        args.sh,
+        args.coreutils,
+      });
+      gcc = args.gcc;
+      targetSystem = args.targetSystem;
+      runtimeShell = sh;
+    }
+  end)
 end
 
-for system, seeds in pairs(bootstrap) do
-  local system <const> = system
-  local seeds <const> = seeds
-  module[system] = tables.lazyModule {
-    bootstrap = function()
-      local targetSystem = systems.parse(system)
-      targetSystem.env = "musl"
-      return module.makeWrapper {
-        buildSystem = system;
-        targetSystem = tostring(targetSystem);
-        gcc = seeds.gcc;
-        coreutils = seeds.busybox;
-        sh = seeds.busybox;
-      }
-    end;
-  }
-end
+module.bootstrap = tables.withOutputs({}, function(_, system)
+  local seeds = bootstrap[system]
+  local targetSystem = systems.parse(system)
+  targetSystem.env = "musl"
+  return outputs(module.makeWrapper {
+    buildSystem = system;
+    targetSystem = tostring(targetSystem);
+    gcc = seeds.gcc;
+    coreutils = seeds.busybox;
+    sh = seeds.busybox;
+  }, system)
+end)
 
 return module

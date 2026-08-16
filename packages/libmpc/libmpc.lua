@@ -1,11 +1,12 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
+local strings <const> = import "../../strings.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["1.2.1"] = {
@@ -17,51 +18,49 @@ local tarballArgs <const> = {
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): any),
 ---version: string,
 ---gmp: derivation|string,
 ---mpfr: derivation|string,
 ---shared: boolean?,
 ---}
----@return derivation
+---@return any
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
     error("libmpc.new: unsupported version "..args.version)
   end
-  local configureFlags = {
-    "--with-gmp="..args.gmp,
-    "--with-mpfr="..args.mpfr,
-  }
-  if args.shared == false then
-    configureFlags[#configureFlags + 1] = "--disable-shared"
-  end
-  return args.makeDerivation {
+  return tables.withOutputs({
     pname = "libmpc";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
-    configureFlags = configureFlags;
-  }
+  }, function(_, system)
+    local configureFlags = {
+      "--with-gmp="..strings.defaultOutput(args.gmp, system),
+      "--with-mpfr="..strings.defaultOutput(args.mpfr, system),
+    }
+    if args.shared == false then
+      configureFlags[#configureFlags + 1] = "--disable-shared"
+    end
+    return outputs(args.makeDerivation {
+      pname = "libmpc";
+      version = args.version;
+      src = src;
+      configureFlags = configureFlags;
+    }, system)
+  end)
 end
 
-for system in pairs(bootstrap) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      local gmp <const> = import("../gmp/gmp.lua")[system].stdenv
-      local mpfr <const> = import("../mpfr/mpfr.lua")[system].stdenv
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "1.2.1";
-        gmp = gmp;
-        mpfr = mpfr;
-        shared = false;
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  local gmp <const> = import("../gmp/gmp.lua").stdenv
+  local mpfr <const> = import("../mpfr/mpfr.lua").stdenv
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "1.2.1";
+    gmp = gmp;
+    mpfr = mpfr;
+    shared = false;
   }
 end
 

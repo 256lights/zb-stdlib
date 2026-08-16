@@ -8,7 +8,8 @@ local strings <const> = import "../../strings.lua"
 local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["3.82"] = {
@@ -29,12 +30,12 @@ local patches <const> = {
   };
 }
 
+---@generic T
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
 ---version: string,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
@@ -47,79 +48,70 @@ function module.new(args)
   return args.makeDerivation {
     pname = "gnumake";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
     patches = patches[args.version];
-
     configureFlags = configureFlags;
   }
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    bootstrap = function()
-      local version <const> = "3.82"
-      local sys <const> = systems.parse(system)
+module.bootstrap = tables.withOutputs({ version = "3.82" }, function(self, system)
+  local sys <const> = systems.parse(system)
 
-      if sys and sys.isLinux then
-        return derivation {
-          name = "gnumake-"..version;
-          pname = "gnumake";
-          version = version;
+  if sys and sys.isLinux then
+    return outputs(derivation {
+      name = "gnumake-"..self.version;
+      pname = "gnumake";
+      version = self.version;
 
-          system = system;
-          builder = seeds[system].busybox.."/bin/sh";
-          args = { path "build.sh" };
+      system = system;
+      builder = strings.defaultOutput(seeds[system].busybox, system).."/bin/sh";
+      args = { path "build.sh" };
 
-          src = module.tarballs[version];
-          sourceRoot = "make-"..version;
-          patches = patches[version];
+      src = module.tarballs[self.version];
+      sourceRoot = "make-"..self.version;
+      patches = patches[self.version];
 
-          PATH = strings.makeBinPath {
-            gcc[system].bootstrap,
-            seeds[system].busybox,
-          };
-          SOURCE_DATE_EPOCH = 0;
-          KBUILD_BUILD_TIMESTAMP = "@0";
-        }
-      elseif sys and sys.isMacOS then
-        return derivation {
-          name = "gnumake-"..version;
-          pname = "gnumake";
-          version = version;
+      PATH = strings.makeBinPath(system, {
+        gcc.bootstrap,
+        seeds[system].busybox,
+      });
+      SOURCE_DATE_EPOCH = 0;
+      KBUILD_BUILD_TIMESTAMP = "@0";
+    }, system)
+  elseif sys and sys.isMacOS then
+    return outputs(derivation {
+      name = "gnumake-"..self.version;
+      pname = "gnumake";
+      version = self.version;
 
-          system = system;
-          builder = "/bin/sh";
-          args = { path "build.sh" };
+      system = system;
+      builder = "/bin/sh";
+      args = { path "build.sh" };
 
-          src = module.tarballs[version];
-          sourceRoot = "make-"..version;
-          patches = patches[version];
+      src = module.tarballs[self.version];
+      sourceRoot = "make-"..self.version;
+      patches = patches[self.version];
 
-          PATH = strings.makeBinPath {
-            "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
-            "/Library/Developer/CommandLineTools/usr",
-            "/usr",
-            "/",
-          };
-          __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
-          SOURCE_DATE_EPOCH = 0;
-          KBUILD_BUILD_TIMESTAMP = "@0";
-        }
-      else
-        return nil
-      end
-    end;
+      PATH = strings.makeBinPath(system, {
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr",
+        "/Library/Developer/CommandLineTools/usr",
+        "/usr",
+        "/",
+      });
+      __buildSystemDeps = { "/usr", "/bin", "/Library/Developer/CommandLineTools" };
+      SOURCE_DATE_EPOCH = 0;
+      KBUILD_BUILD_TIMESTAMP = "@0";
+    }, system)
+  else
+    error("gnumake.bootstrap: unsupported system "..system)
+  end
+end)
 
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "4.4.1";
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "4.4.1";
   }
 end
 

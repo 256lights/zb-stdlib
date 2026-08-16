@@ -17,23 +17,23 @@ module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 local builderScript <const> = path "build.sh"
 
+---@generic T
 ---@param args {
----makeDerivation: (fun(args: table<string, any>): derivation),
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
+---targetSystem: string,
 ---version: string,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
     error("linux-headers.new: unsupported version "..args.version)
   end
-  local sys = assert(systems.parse(args.buildSystem), "invalid buildSystem "..args.buildSystem)
-  assert(sys.isX86 or sys.isARM, "unsupported system "..args.buildSystem)
+  local sys = systems.parse(args.targetSystem)
+  assert(sys and sys.isLinux and (sys.isX86 or sys.isARM), "unsupported system "..args.targetSystem)
   return args.makeDerivation {
     pname = "linux-headers";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
     builder = builderScript;
 

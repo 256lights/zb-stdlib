@@ -18,13 +18,13 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
+---@generic T
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
 ---version: string,
 ---shared: boolean?,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
@@ -37,7 +37,6 @@ function module.new(args)
   return args.makeDerivation {
     pname = "musl";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
     configureFlags = configureFlags;
   }

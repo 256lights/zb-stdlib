@@ -2,6 +2,7 @@
 -- SPDX-License-Identifier: MIT
 
 local systems <const> = import "../../systems.lua"
+local strings <const> = import "../../strings.lua"
 local tables <const> = import "../../tables.lua"
 
 local binutils <const> = import "../../packages/binutils/binutils.lua"
@@ -240,19 +241,18 @@ find \
     return makeDerivation(args)
   end
 
-  local linuxHeaders <const> = linuxHeaders.new {
+  local linuxHeaders <const> = strings.defaultOutput(linuxHeaders.new {
     makeDerivation = makeDerivationWithGCC2;
-    buildSystem = system;
+    targetSystem = system;
     version = "4.14.336";
-  }
+  }, system)
 
-  local busybox = busybox.new {
+  local busybox = strings.defaultOutput(busybox.new {
     makeDerivation = makeDerivationWithGCC2;
-    buildSystem = system;
     version = "1.36.1";
     configFile = path "busybox-config";
     linuxHeaders = linuxHeaders;
-  }
+  }, system)
 
   return {
     gcc = gcc2;
