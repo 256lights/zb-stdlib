@@ -60,7 +60,7 @@ function module.makeWrapper(args)
   end
 
   return tables.withOutputs(args, function(args, system)
-    local sh = strings.defaultOutput(args.sh, system).."/bin/sh"
+    local sh = defaultOutput(args.sh, system).."/bin/sh"
     return derivation {
       name = "gcc-"..version;
       pname = "gcc";

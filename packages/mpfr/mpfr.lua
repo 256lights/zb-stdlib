@@ -35,7 +35,7 @@ function module.new(args)
     src = src;
   }, function(_, system)
     local configureFlags = {
-      "--with-gmp="..strings.defaultOutput(args.gmp, system),
+      "--with-gmp="..defaultOutput(args.gmp, system),
     }
     if args.shared == false then
       configureFlags[#configureFlags + 1] = "--disable-shared"

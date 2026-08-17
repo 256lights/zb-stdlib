@@ -64,7 +64,7 @@ module.bootstrap = tables.withOutputs({ version = "3.82" }, function(self, syste
       version = self.version;
 
       system = system;
-      builder = strings.defaultOutput(seeds[system].busybox, system).."/bin/sh";
+      builder = defaultOutput(seeds[system].busybox, system).."/bin/sh";
       args = { path "build.sh" };
 
       src = module.tarballs[self.version];

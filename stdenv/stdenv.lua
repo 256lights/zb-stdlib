@@ -61,7 +61,7 @@ local function makeDerivation(system, bash, deps, args)
   end
   args.helpersNix = args.helpersNix or module.helpersNix
   args.args = args.args or { args.builder or module.builderScript }
-  args.builder = args.realBuilder or strings.defaultOutput(bash, system).."/bin/bash"
+  args.builder = args.realBuilder or defaultOutput(bash, system).."/bin/bash"
   if not args.SOURCE_DATE_EPOCH then
     args.SOURCE_DATE_EPOCH = 0
   end

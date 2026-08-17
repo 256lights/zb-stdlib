@@ -2,7 +2,6 @@
 -- SPDX-License-Identifier: MIT
 
 local fetchGNU <const> = import "../../fetchgnu.lua"
-local strings <const> = import "../../strings.lua"
 local tables <const> = import "../../tables.lua"
 
 local getters <const> = {}
@@ -36,8 +35,8 @@ function module.new(args)
     src = src;
   }, function(_, system)
     local configureFlags = {
-      "--with-gmp="..strings.defaultOutput(args.gmp, system),
-      "--with-mpfr="..strings.defaultOutput(args.mpfr, system),
+      "--with-gmp="..defaultOutput(args.gmp, system),
+      "--with-mpfr="..defaultOutput(args.mpfr, system),
     }
     if args.shared == false then
       configureFlags[#configureFlags + 1] = "--disable-shared"

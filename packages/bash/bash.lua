@@ -78,7 +78,7 @@ function getters.bootstrap()
         version = version;
 
         system = system;
-        builder = strings.defaultOutput(seeds[system].busybox, system).."/bin/sh";
+        builder = defaultOutput(seeds[system].busybox, system).."/bin/sh";
         args = { path "build.sh" };
 
         src = module.tarballs[version];

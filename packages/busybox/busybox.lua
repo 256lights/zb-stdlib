@@ -46,11 +46,11 @@ function module.new(args)
       patches = self.patches;
 
       CONFIG_INSTALL_NO_USR = "y";
-      configFile = strings.defaultOutput(args.configFile, system);
+      configFile = defaultOutput(args.configFile, system);
       configurePhase = "cp $configFile .config";
 
       C_INCLUDE_PATH = strings.makeIncludePath(system, {
-        strings.defaultOutput(args.linuxHeaders, system),
+        defaultOutput(args.linuxHeaders, system),
       });
 
       installPhase = [[make CONFIG_PREFIX="$out" ${makeFlags:-} ${installFlags:-} install]];

@@ -84,16 +84,6 @@ function makeLibraryPath(system, pkgs)
   return makeSearchPathOutput("out", "lib", system, pkgs)
 end
 
----Returns the output with the empty string name for a value.
----For many values, this is equivalent to tostring.
----Raises an error if the value does not have a default output.
----@param x any
----@param system string
----@return string
-function defaultOutput(x, system)
-  return (assert(outputs(x, system)[""], "no output present"))
-end
-
 ---@param name string
 ---@return {name: string, version: string}
 local function parseDrvName(name)
