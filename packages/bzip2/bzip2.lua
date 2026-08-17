@@ -1,10 +1,10 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["1.0.8"] = {
@@ -16,12 +16,12 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
+---@generic T
 ---@param args {
----makeDerivation: (fun(args: table<string, any>): derivation),
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
 ---version: string,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
@@ -30,7 +30,6 @@ function module.new(args)
   return args.makeDerivation {
     pname = "bzip2";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
 
     dontConfigure = true;
@@ -39,17 +38,11 @@ function module.new(args)
   }
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "1.0.8";
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "1.0.8";
   }
 end
 

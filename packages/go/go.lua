@@ -5,7 +5,8 @@ local strings <const> = import "../../strings.lua"
 local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["1.4"] = {
@@ -74,7 +75,7 @@ local function useMacOSARMSeed(targetSystem, version)
     targetSystem = systems.parse(targetSystem)
   end
   return targetSystem and targetSystem.isMacOS and targetSystem.isARM and targetSystem.is64Bit and
-  version == trimPatch(macOSARMSeedVersion)
+      version == trimPatch(macOSARMSeedVersion)
 end
 
 local bootstrapVersion <const> = "1.4"
@@ -99,66 +100,64 @@ local bootstrapSequence <const> = {
   ["1.21"] = "1.19"; -- >=1.17
   ["1.22"] = "1.21"; -- >=1.20
   ["1.23"] = "1.21"; -- >=1.20
-  ["1.24"] = "1.23";  -- >=1.22
-  ["1.25"] = "1.23";  -- >=1.22
-  ["1.26"] = "1.25";  -- >=1.24
+  ["1.24"] = "1.23"; -- >=1.22
+  ["1.25"] = "1.23"; -- >=1.22
+  ["1.26"] = "1.25"; -- >=1.24
 }
 
 module.tarballs = tables.lazyMap(fetchurl, tarballArgs)
 
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): any),
 ---version: string,
----go: derivation|string?,
+---go: any,
 ---}
----@return derivation
+---@return table
 function module.new(args)
-  if not args.go then
-    if useMacOSARMSeed(args.buildSystem, args.version) then
-      return args.makeDerivation {
-        pname = "go";
-        version = macOSARMSeedVersion;
-        buildSystem = args.buildSystem;
-        src = fetchurl(macOSARMSeedArgs);
-
-        dontConfigure = true;
-        dontBuild = true;
-
-        installPhase = "cp -a --reflink=auto . $out";
-      }
-    end
-    assert(args.version == bootstrapVersion, "go.new: missing go")
-  end
-  local src = module.tarballs[args.version]
-  if not src then
-    error("go.new: unsupported version "..args.version)
-  end
-  local PATH
-  if args.go then
-    PATH = strings.makeBinPath { args.go }
-  end
-  return args.makeDerivation {
+  local src = assert(module.tarballs[args.version], "go.new: unsupported version "..args.version)
+  return tables.withOutputs({
     pname = "go";
     version = versionForURL(tarballArgs[args.version].url);
-    buildSystem = args.buildSystem;
-    src = src;
+  }, function(self, system)
+    if not args.go then
+      if useMacOSARMSeed(system, args.version) then
+        return outputs(args.makeDerivation {
+          pname = "go";
+          version = macOSARMSeedVersion;
+          src = fetchurl(macOSARMSeedArgs);
 
-    postPatch = [[
+          dontConfigure = true;
+          dontBuild = true;
+
+          installPhase = "cp -a --reflink=auto . $out";
+        }, system)
+      end
+      assert(args.version == bootstrapVersion, "go.new: missing go")
+    end
+    local PATH
+    if args.go then
+      PATH = strings.makeBinPath(system, { args.go })
+    end
+    return outputs(args.makeDerivation {
+      pname = "go";
+      version = self.version,
+      src = src;
+
+      postPatch = [[
 patchShebangs src/make.bash
 ]];
 
-    -- TODO(#14): CGO_ENABLED=0 because cgo requires gcc 4.6 or newer.
-    -- https://go.dev/wiki/MinimumRequirements
-    configurePhase = [[
+      -- TODO(#14): CGO_ENABLED=0 because cgo requires gcc 4.6 or newer.
+      -- https://go.dev/wiki/MinimumRequirements
+      configurePhase = [[
 export GOROOT_FINAL="$out/share/go"
 export GOPATH="$ZB_BUILD_TOP/gopath"
 export GOCACHE="$ZB_BUILD_TOP/cache"
 export CGO_ENABLED=0
 mkdir "$GOPATH" "$GOCACHE"
 ]];
-    buildPhase = [[( cd src && ./make.bash )]];
-    installPhase = [=[
+      buildPhase = [[( cd src && ./make.bash )]];
+      installPhase = [=[
 mkdir -p "$out/share/go"
 cp --reflink=auto --archive bin pkg src lib misc api doc "$out/share/go/"
 if [[ -e go.env ]]; then
@@ -167,8 +166,9 @@ fi
 mkdir -p "$out/bin"
 ln -s "$out/share/go/bin"/* "$out/bin/"
 ]=];
-    PATH = PATH;
-  }
+      PATH = PATH;
+    }, system)
+  end)
 end
 
 ---Compute the environment variables to use to instruct Go to cross-compile for the given system.
@@ -207,21 +207,21 @@ function module.envForSystem(system)
   return result
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyMap(function(_, version)
-    local stdenv <const> = import "../../stdenv/stdenv.lua"
-    local go
-    if version ~= bootstrapVersion and not useMacOSARMSeed(system, version) then
-      go = module[system][bootstrapSequence[version]]
-    end
-    return module.new {
-      makeDerivation = stdenv.makeDerivation;
-      buildSystem = system;
-      version = version;
-      go = go;
-    }
-  end, tarballArgs)
+local function getVersion(_, version)
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  local go
+  if version ~= bootstrapVersion and not useMacOSARMSeed(system, version) then
+    go = module[bootstrapSequence[version]]
+  end
+  return module.new {
+    makeDerivation = stdenv.makeDerivation;
+    version = version;
+    go = go;
+  }
+end
+
+for version in pairs(tarballArgs) do
+  getters[version] = getVersion
 end
 
 return module

@@ -2,10 +2,10 @@
 -- SPDX-License-Identifier: MIT
 
 local fetchGNU <const> = import "../../fetchgnu.lua"
-local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["3.12"] = {
@@ -35,17 +35,11 @@ function module.new(args)
   }
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "3.12";
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "3.12";
   }
 end
 

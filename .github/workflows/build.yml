@@ -13,7 +13,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      my_zb_version: '0.2.0-beta5'
+      my_zb_version: '0.2.0-beta6'
       my_zb_config: >-
         {
           "trustedPublicKeys": [
@@ -66,5 +66,4 @@ jobs:
                 ]
               }
             }
-      - name: Build gcc
-        run: zb build 'packages/gcc/gcc.lua#bootstrap'
+      - run: zb build ci.lua

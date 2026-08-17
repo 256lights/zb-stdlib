@@ -31,7 +31,7 @@ end
 ---@param t table<K, V>
 ---@return table<K, V>
 function clone(t)
-  return map(function (x) return x end, t)
+  return map(function(x) return x end, t)
 end
 
 ---Copy the pairs from each argument into the first argument.
@@ -112,54 +112,30 @@ end
 ---@param t table<K, any>
 ---@return table<K, any>
 function lazyModule(t)
-  ---@type table<any, any>
-  local init = {}
-  ---@type table<any, fun(): any>
-  local accessors = {}
-
-  for k, v in pairs(t) do
-    if isLazyKey(k) then
-      if type(v) == "function" then
-        accessors[k] = v
-      else
-        init[k] = v
-      end
-    end
-  end
-
-  local function lazyNext(_, k)
-    local v
-    if k == nil or init[k] ~= nil then
-      k, v = next(init, k)
-      if k == nil then
-        k, v = next(accessors, k)
-        if v then v = v() end
-      end
-    else
-      k, v = next(accessors, k)
-      if v then v = v() end
-    end
-    if k == nil then
-      return nil
-    end
-    return k, v
+  local function lazyNext(self, prev)
+    local k = next(t, prev)
+    return k, self[k]
   end
 
   return setmetatable({}, {
+    __name = "lazyModule";
     __metatable = false;
-    __index = lazy(function(_, k)
-      local f = accessors[k]
-      if f then
-        return f()
+    __index = lazy(function(self, k)
+      local v = t[k]
+      if type(v) == "function" then
+        return v(self, k)
       else
-        return nil
+        return v
       end
-    end, init);
+    end);
     __setindex = function()
       error("cannot modify lazy module")
     end;
-    __pairs = function(obj)
-      return lazyNext, obj, nil
+    __len = function()
+      return #t
+    end;
+    __pairs = function(self)
+      return lazyNext, self, nil
     end;
   })
 end
@@ -202,4 +178,36 @@ function lazyMap(f, t)
       return lazyMapNext, obj, nil
     end;
   })
+end
+
+---Returns an immutable copy of a table whose __outputs function is given.
+---@param t table
+---@param f fun(self: table, system: string): any
+---@return table
+function withOutputs(t, f)
+  t = clone(t)
+  local mt = {
+    __index = t;
+    __outputs = f;
+  }
+  local object = setmetatable({}, mt)
+
+  function mt:__len()
+    return #t
+  end
+
+  function mt:__newindex()
+    error("cannot modify table with outputs", 2)
+  end
+
+  local function tnext(self, index)
+    assert(self == object)
+    return next(t, index)
+  end
+
+  function mt:__pairs()
+    return tnext, self, nil
+  end
+
+  return object
 end
