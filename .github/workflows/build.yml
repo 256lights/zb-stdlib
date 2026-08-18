@@ -16,6 +16,7 @@ jobs:
       my_zb_version: '0.2.0-beta6'
       my_zb_config: >-
         {
+          "debug": true,
           "trustedPublicKeys": [
             {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
           ],
@@ -33,6 +34,7 @@ jobs:
         with:
           project_id: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
           workload_identity_provider: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
+      - run: mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zb"
       - uses: 256lights/setup-zb@v1
         if: github.event_name != 'push'
         with:
