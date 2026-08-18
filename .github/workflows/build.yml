@@ -68,4 +68,4 @@ jobs:
                 ]
               }
             }
-      - run: zb build ci.lua
+      - run: zb build --debug=0 ci.lua
