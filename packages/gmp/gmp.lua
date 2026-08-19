@@ -1,12 +1,12 @@
 -- Copyright 2025 The zb Authors
 -- SPDX-License-Identifier: MIT
 
-local bootstrap <const> = import "../../bootstrap/seeds.lua"
 local fetchGNU <const> = import "../../fetchgnu.lua"
 local strings <const> = import "../../strings.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["6.2.1"] = {
@@ -17,43 +17,38 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
+---@generic T
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table): T),
 ---version: string,
----gnum4: derivation|string,
+---gnum4: any,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
     error("gmp.new: unsupported version "..args.version)
   end
-  return args.makeDerivation {
-    pname = "gmp";
-    version = args.version;
-    buildSystem = args.buildSystem;
-    src = src;
-    configureFlags = { "--disable-shared" };
-    PATH = strings.makeBinPath {
-      args.gnum4,
-    };
-  }
+  return tables.withOutputs(args, function(args, system)
+    return args.makeDerivation {
+      pname = "gmp";
+      version = args.version;
+      src = src;
+      configureFlags = { "--disable-shared" };
+      PATH = strings.makeBinPath(system, {
+        args.gnum4,
+      });
+    }
+  end)
 end
 
-for system in pairs(bootstrap) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      local gnum4 <const> = import("../gnum4/gnum4.lua")[system].stdenv
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "6.2.1";
-        gnum4 = gnum4;
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  local gnum4 <const> = import("../gnum4/gnum4.lua").stdenv
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "6.2.1";
+    gnum4 = gnum4;
   }
 end
 

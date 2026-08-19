@@ -5,7 +5,8 @@ local fetchGNU <const> = import "../../fetchgnu.lua"
 local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["1.35"] = {
@@ -17,41 +18,35 @@ local tarballArgs <const> = {
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
 ---@param args {
----makeDerivation: function,
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): any),
 ---version: string,
 ---}
----@return derivation
+---@return any
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
     error("gnutar.new: unsupported version "..args.version)
   end
-  local buildSystem = systems.parse(args.buildSystem)
-  local LDFLAGS = {}
-  if buildSystem.isMacOS then
-    LDFLAGS[#LDFLAGS+1] = "-liconv"
-  end
-  return args.makeDerivation {
-    pname = "gnutar";
-    version = args.version;
-    buildSystem = args.buildSystem;
-    src = src;
-    LDFLAGS = LDFLAGS;
-  }
+  return tables.withOutputs(args, function(args, system)
+    local sys = systems.parse(system)
+    local LDFLAGS = {}
+    if sys.isMacOS then
+      LDFLAGS[#LDFLAGS + 1] = "-liconv"
+    end
+    return outputs(args.makeDerivation {
+      pname = "gnutar";
+      version = args.version;
+      src = src;
+      LDFLAGS = LDFLAGS;
+    }, system)
+  end)
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "1.35";
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "1.35";
   }
 end
 

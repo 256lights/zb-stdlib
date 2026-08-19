@@ -240,19 +240,18 @@ find \
     return makeDerivation(args)
   end
 
-  local linuxHeaders <const> = linuxHeaders.new {
+  local linuxHeaders <const> = defaultOutput(linuxHeaders.new {
     makeDerivation = makeDerivationWithGCC2;
-    buildSystem = system;
+    targetSystem = system;
     version = "4.14.336";
-  }
+  }, system)
 
-  local busybox = busybox.new {
+  local busybox = defaultOutput(busybox.new {
     makeDerivation = makeDerivationWithGCC2;
-    buildSystem = system;
     version = "1.36.1";
     configFile = path "busybox-config";
     linuxHeaders = linuxHeaders;
-  }
+  }, system)
 
   return {
     gcc = gcc2;

@@ -2,10 +2,10 @@
 -- SPDX-License-Identifier: MIT
 
 local fetchGNU <const> = import "../../fetchgnu.lua"
-local systems <const> = import "../../systems.lua"
 local tables <const> = import "../../tables.lua"
 
-local module <const> = {}
+local getters <const> = {}
+local module <const> = setmetatable({}, { __index = tables.lazyModule(getters) })
 
 local tarballArgs <const> = {
   ["1.4.7"] = {
@@ -20,12 +20,12 @@ local tarballArgs <const> = {
 
 module.tarballs = tables.lazyMap(fetchGNU, tarballArgs)
 
+---@generic T
 ---@param args {
----makeDerivation: (fun(args: table<string, any>): derivation),
----buildSystem: string,
+---makeDerivation: (fun(args: table<string, any>): T),
 ---version: string,
 ---}
----@return derivation
+---@return T
 function module.new(args)
   local src = module.tarballs[args.version]
   if not src then
@@ -34,22 +34,15 @@ function module.new(args)
   return args.makeDerivation {
     pname = "gnum4";
     version = args.version;
-    buildSystem = args.buildSystem;
     src = src;
   }
 end
 
-for _, system in ipairs(systems.stdlibSystems) do
-  local system <const> = system
-  module[system] = tables.lazyModule {
-    stdenv = function()
-      local stdenv <const> = import "../../stdenv/stdenv.lua"
-      return module.new {
-        makeDerivation = stdenv.makeBootstrapDerivation;
-        buildSystem = system;
-        version = "1.4.19";
-      }
-    end;
+function getters.stdenv()
+  local stdenv <const> = import "../../stdenv/stdenv.lua"
+  return module.new {
+    makeDerivation = stdenv.makeBootstrapDerivation;
+    version = "1.4.19";
   }
 end
 

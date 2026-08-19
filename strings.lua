@@ -44,22 +44,19 @@ end
 ---to the specified `output` of each of the packages.
 ---@param output string
 ---@param subDir string
+---@param system string
 ---@param paths (derivation|string)[]
 ---@return string
-function makeSearchPathOutput(output, subDir, paths)
+function makeSearchPathOutput(output, subDir, system, paths)
   local parts = {}
   for i, x in ipairs(paths) do
-    local xout
-    if type(x) == "string" then
-      xout = x
-    else
-      xout = x[output] or x.out
-    end
+    local xouts = outputs(x, system)
+    local xout = xouts[output] or xouts[""]
     if xout then
       if #parts > 0 then
         parts[#parts + 1] = ":"
       end
-      parts[#parts + 1] = tostring(xout)
+      parts[#parts + 1] = xout
       parts[#parts + 1] = "/"
       parts[#parts + 1] = subDir
     end
@@ -71,20 +68,20 @@ end
 ---containing the binaries for a set of packages.
 ---@param pkgs derivation[]
 ---@return string # colon-separated paths
-function makeBinPath(pkgs)
-  return makeSearchPathOutput("out", "bin", pkgs)
+function makeBinPath(system, pkgs)
+  return makeSearchPathOutput("out", "bin", system, pkgs)
 end
 
 ---@param pkgs derivation[]
 ---@return string
-function makeIncludePath(pkgs)
-  return makeSearchPathOutput("dev", "include", pkgs)
+function makeIncludePath(system, pkgs)
+  return makeSearchPathOutput("dev", "include", system, pkgs)
 end
 
 ---@param pkgs derivation[]
 ---@return string
-function makeLibraryPath(pkgs)
-  return makeSearchPathOutput("out", "lib", pkgs)
+function makeLibraryPath(system, pkgs)
+  return makeSearchPathOutput("out", "lib", system, pkgs)
 end
 
 ---@param name string

@@ -31,7 +31,7 @@ end
 ---@param t table<K, V>
 ---@return table<K, V>
 function clone(t)
-  return map(function (x) return x end, t)
+  return map(function(x) return x end, t)
 end
 
 ---Copy the pairs from each argument into the first argument.
@@ -178,4 +178,36 @@ function lazyMap(f, t)
       return lazyMapNext, obj, nil
     end;
   })
+end
+
+---Returns an immutable copy of a table whose __outputs function is given.
+---@param t table
+---@param f fun(self: table, system: string): any
+---@return table
+function withOutputs(t, f)
+  t = clone(t)
+  local mt = {
+    __index = t;
+    __outputs = f;
+  }
+  local object = setmetatable({}, mt)
+
+  function mt:__len()
+    return #t
+  end
+
+  function mt:__newindex()
+    error("cannot modify table with outputs", 2)
+  end
+
+  local function tnext(self, index)
+    assert(self == object)
+    return next(t, index)
+  end
+
+  function mt:__pairs()
+    return tnext, self, nil
+  end
+
+  return object
 end
