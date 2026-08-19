@@ -1,0 +1,71 @@
+# Copyright 2026 The zb Authors
+# SPDX-License-Identifier: MIT
+
+name: Build
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      my_zb_version: '0.2.0-beta6'
+      my_zb_config: >-
+        {
+          "debug": true,
+          "trustedPublicKeys": [
+            {"format":"ed25519","publicKey":"M0Wc4njJwCmAHZSp06CE1iNYVXvw023OZqgf0iPMBVA="},
+          ],
+          "server": {
+            "download": {
+              "type": "http",
+              "url": "https://zb-cache.256lights.llc/store.json",
+            },
+          },
+        }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: google-github-actions/auth@v3
+        if: github.event_name == 'push'
+        with:
+          project_id: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ vars.ZB_WORKLOAD_IDENTITY_PROVIDER }}
+      - run: mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zb"
+      - uses: 256lights/setup-zb@v1
+        if: github.event_name != 'push'
+        with:
+          zb-version: ${{ env.my_zb_version }}
+          configuration: ${{ env.my_zb_config }}
+      - name: Set up zb with upload settings
+        if: github.event_name == 'push'
+        uses: 256lights/setup-zb@v1
+        with:
+          zb-version: ${{ env.my_zb_version }}
+          configuration: ${{ env.my_zb_config }}
+          signing-key: ${{ secrets.ZB_SIGNING_KEY }}
+          server-upload-discovery: >-
+            {
+              "_links": {
+                "https://zb-build.dev/api/rel/narinfo": [
+                  {
+                    "href": "gs://zb-stdlib-cache/{digest}.narinfo",
+                    "templated": true
+                  }
+                ],
+                "https://zb-build.dev/api/rel/nar": {
+                  "href": "gs://zb-stdlib-cache/nar/{digest}.nar",
+                  "templated": true
+                },
+                "https://zb-build.dev/api/rel/realization": [
+                  {
+                    "href": "gs://zb-stdlib-cache/realizations/{hashDigest}.json",
+                    "templated": true
+                  }
+                ]
+              }
+            }
+      - run: zb build --debug=0 ci.lua
