@@ -1,0 +1,33 @@
+{
+  "name": "setup-zb",
+  "version": "0.1.0",
+  "description": "GitHub Action to install zb",
+  "license": "MIT",
+  "author": "The zb Authors",
+  "keywords": [
+    "actions",
+    "zb",
+    "setup"
+  ],
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/exec": "^3.0.0",
+    "@actions/github": "^9.1.1",
+    "@actions/tool-cache": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "esbuild": "^0.28.1",
+    "typescript": "^7.0.2"
+  }
+}

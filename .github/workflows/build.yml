@@ -1,0 +1,22 @@
+# Copyright 2026 The zb Authors
+# SPDX-License-Identifier: MIT
+
+name: Build
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+      - name: Install zb
+        uses: $/.github/actions/setup-zb
+        with:
+          zb-version: '0.2.0-beta1'
+      - name: Check zb version
+        run: zb --version
